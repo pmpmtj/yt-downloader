@@ -1,0 +1,108 @@
+{
+    "downloads": {
+        "base_directory": "downloads",
+        "create_session_folders": true,
+        "create_video_folders": true,
+        "folder_structure": "{session_uuid}/{video_uuid}/{media_type}"
+    },
+    "quality_preferences": {
+        "video": {
+            "preferred_quality": "720p",
+            "fallback_qualities": ["720p", "480p", "360p", "1080p"],
+            "preferred_formats": ["mp4", "webm", "mkv"],
+            "max_fallback_attempts": 3
+        },
+        "audio": {
+            "preferred_quality": "medium",
+            "preferred_codec": "mp3",
+            "preferred_bitrate": "192",
+            "fallback_qualities": ["medium", "low", "high"],
+            "preferred_formats": ["mp3", "m4a", "ogg"],
+            "max_fallback_attempts": 3
+        }
+    },
+    "format_selection": {
+        "priority_order": ["quality", "file_size", "format_preference"],
+        "prefer_smaller_files": true,
+        "format_preference_order": ["mp4", "webm", "mkv", "flv"]
+    },
+    "network": {
+        "max_retries": 3,
+        "retry_delay_seconds": 2,
+        "timeout_seconds": 30,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    },
+    "transcripts": {
+        "preferred_languages": ["en", "en-US", "en-GB"],
+        "include_timestamps": true,
+        "fallback_to_auto_generated": true,
+        "max_fallback_attempts": 3,
+        "processing": {
+            "output_formats": {
+                "clean": true,
+                "timestamped": true,
+                "structured": true
+            },
+            "text_cleaning": {
+                "enabled": true,
+                "remove_filler_words": true,
+                "normalize_whitespace": true,
+                "fix_transcription_artifacts": true,
+                "filler_words": ["um", "uh", "like", "you know", "so", "well", "actually", "basically", "literally"]
+            },
+            "chapter_detection": {
+                "enabled": true,
+                "min_silence_gap_seconds": 3.0,
+                "min_chapter_length_seconds": 30.0,
+                "include_chapter_summaries": true
+            },
+            "preview": {
+                "max_lines": 10,
+                "include_stats": true,
+                "include_quality_indicators": true
+            }
+        }
+    },
+    "metadata_collection": {
+        "enabled": true,
+        "content_analysis": {
+            "extract_topics": true,
+            "analyze_sentiment": false,
+            "detect_language": true,
+            "extract_keywords": true,
+            "content_categorization": true
+        },
+        "video_metadata": {
+            "detailed_description": true,
+            "channel_info": true,
+            "engagement_metrics": true,
+            "technical_details": true,
+            "thumbnail_info": true
+        },
+        "quality_assessment": {
+            "content_quality_score": true,
+            "transcript_confidence": true,
+            "audio_video_sync": true,
+            "completeness_check": true
+        },
+        "export_options": {
+            "include_in_structured": true,
+            "separate_metadata_file": false,
+            "csv_summary": false,
+            "markdown_report": false
+        }
+    },
+    "logging": {
+        "log_downloads": true,
+        "log_format_selections": true,
+        "log_errors": true,
+        "log_network_requests": true,
+        "log_file_operations": true
+    },
+    "behavior": {
+        "overwrite_existing_files": false,
+        "sanitize_filenames": true,
+        "max_filename_length": 255,
+        "validate_urls": true
+    }
+}

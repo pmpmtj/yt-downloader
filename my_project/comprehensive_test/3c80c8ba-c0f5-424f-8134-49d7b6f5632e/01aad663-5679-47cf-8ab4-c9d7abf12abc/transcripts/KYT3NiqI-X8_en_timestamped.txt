@@ -1,0 +1,104 @@
+[0.40s] 5 4 3 2 1
+[13.03s] [Applause]
+[17.76s] vehicle pitching range.
+[19.09s] [Applause]
+[25.95s] [Applause]
+[32.16s] Booster chamber pressure now.
+[48.24s] All right, we're a little over 40
+[49.84s] seconds into flight. 33 out of 30.
+[53.20s] Avionic power and telemetry nominal.
+[57.76s] >> Getting good call outs. Healthy systems
+[60.00s] on the booster as it starts to pitch
+[61.76s] over over the Gulf.
+[63.60s] >> We are through the period of maximum
+[65.36s] dynamic pressure, max stress on the
+[67.68s] vehicle as it continues to fly. Our next
+[70.80s] major event is going to be hot staging,
+[72.96s] which is happening in just over 90
+[74.88s] seconds from now. Uh, to get ready, the
+[77.28s] booster will shut down all but three of
+[79.20s] its Raptor engines. The clamps holding
+[81.44s] the two stages together will release,
+[83.44s] and the Starship second stage ignites
+[85.28s] its engines.
+[87.76s] >> Who's startup?
+[89.20s] >> Stage separation.
+[96.32s] >> Stage separation confirmed. We've got
+[98.32s] six engines running on ship. Booster is
+[101.76s] doing its boost back burn, continuing
+[103.68s] now towards its splashdown site in the
+[106.96s] Gulf.
+[107.92s] >> We are seeing all six raptors lit up on
+[109.84s] ship.
+[113.36s] >> All right, here we go.
+[114.96s] >> Landing burn startup.
+[120.32s] Looks like we got 12 of those 13
+[124.32s] down to three including one of the
+[126.00s] middle ring
+[135.60s] down to two.
+[138.64s] Nice little hover
+[140.96s] and landing burn shutdown
+[145.04s] and into the gulf here we come
+[150.56s] and the booster has splashed down.
+[155.60s] >> Incredible flight for booster today.
+[160.40s] >> Meanwhile, back in space,
+[165.60s] right, shut down the vacuum engines.
+[177.36s] Ship engine cutoff.
+[178.64s] >> We shut down the center three.
+[180.64s] Successful ship engine cutoff
+[187.52s] today. We also have some actual payload
+[189.76s] on board and those simulators that
+[192.00s] Starship will be deploying. Um we'll see
+[194.48s] coming up here in just a few minutes.
+[196.64s] These are dummy satellites that are
+[198.48s] about the same size as our V3 Starlinks.
+[201.28s] Uh we have eight in the Starship PEZ
+[203.36s] dispenser and expect to deploy at a rate
+[205.92s] of about one per minute as Dan mentioned
+[208.08s] earlier.
+[212.16s] >> There we go.
+[234.80s] Pew.
+[236.80s] Been waiting way too long to do that.
+[238.16s] There we go.
+[245.68s] There goes another one.
+[257.12s] And there you go. One remaining. So,
+[258.80s] seven of the eight have been deployed.
+[261.12s] One more to go and then we will have
+[264.00s] completed our first ever payload deploy
+[265.76s] operation.
+[268.08s] Just a reminder, we're on a suborbital
+[270.32s] trajectory. These satellites on that
+[272.96s] exact same suborbital trajectory.
+[274.64s] They're going to burn up uh entirely.
+[277.84s] They're on that same trajectory towards
+[279.52s] the Indian Ocean. So, the last one has
+[282.80s] been deployed.
+[286.08s] Starlink simulator payload complete.
+[289.36s] Heck yeah, everybody.
+[292.80s] >> Loving the energy from Star Hoff.
+[296.56s] >> All right, so about 55 and a half
+[298.56s] minutes in. You can see the sun is up.
+[300.24s] Again, we intentionally designed these
+[302.00s] flights to lift off in the evening here
+[304.64s] so we get these daylight views so we can
+[306.48s] get as good a video as possible on the
+[310.48s] ship, assuming we make it all the way
+[312.00s] down. We've got at least one buoy
+[314.96s] powered by Starlink that's out there in
+[317.44s] the landing zone in the Indian Ocean,
+[319.76s] hopefully giving us a view. Again, if
+[321.60s] you see any live views uh not from the
+[324.32s] ship itself, that means we nailed our
+[326.64s] landing target.
+[327.68s] >> Is passed peak heating.
+[329.84s] So, Starship's doing its belly flop
+[331.92s] right now. We're going to do the flip
+[334.08s] swing out. Let's punch through some
+[335.60s] clouds first.
+[346.96s] Here we go.
+[349.44s] >> Starship landing burn start up.
+[355.76s] >> Seeing three engines.
+[359.44s] There's our flip.
+[364.80s] There's a buoy.
+[369.60s] There's a splash down.
+[379.04s] Hey

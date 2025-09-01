@@ -1,0 +1,661 @@
+{
+  "metadata": {
+    "video_id": "KYT3NiqI-X8",
+    "title": "SpaceX's Tenth Starship Flight Test: Everything That Happened in 6 Minutes",
+    "duration": 386,
+    "upload_date": "20250827",
+    "uploader": "CNET",
+    "processed_at": "2025-09-01T18:52:11.502603",
+    "processor_version": "1.0"
+  },
+  "statistics": {
+    "total_entries": 104,
+    "word_count": 575,
+    "character_count": 3155,
+    "estimated_reading_time_minutes": 2.9,
+    "chapters_detected": 10,
+    "speaking_rate_wpm": 91.0,
+    "lexical_diversity": 0.5495652173913044,
+    "average_words_per_sentence": 9.126984126984127
+  },
+  "transcript": {
+    "entries": "FetchedTranscript(snippets=[FetchedTranscriptSnippet(text='5 4 3 2 1', start=0.4, duration=6.919), FetchedTranscriptSnippet(text='[Applause]', start=13.03, duration=3.25), FetchedTranscriptSnippet(text='vehicle pitching range.', start=17.76, duration=5.74), FetchedTranscriptSnippet(text='[Applause]', start=19.09, duration=4.41), FetchedTranscriptSnippet(text='[Applause]', start=25.95, duration=10.17), FetchedTranscriptSnippet(text='Booster chamber pressure now.', start=32.16, duration=3.96), FetchedTranscriptSnippet(text=\"All right, we're a little over 40\", start=48.239, duration=4.96), FetchedTranscriptSnippet(text='seconds into flight. 33 out of 30.', start=49.84, duration=7.64), FetchedTranscriptSnippet(text='Avionic power and telemetry nominal.', start=53.199, duration=4.281), FetchedTranscriptSnippet(text='>> Getting good call outs. Healthy systems', start=57.76, duration=4.0), FetchedTranscriptSnippet(text='on the booster as it starts to pitch', start=60.0, duration=3.6), FetchedTranscriptSnippet(text='over over the Gulf.', start=61.76, duration=3.6), FetchedTranscriptSnippet(text='>> We are through the period of maximum', start=63.6, duration=4.08), FetchedTranscriptSnippet(text='dynamic pressure, max stress on the', start=65.36, duration=5.439), FetchedTranscriptSnippet(text='vehicle as it continues to fly. Our next', start=67.68, duration=5.28), FetchedTranscriptSnippet(text='major event is going to be hot staging,', start=70.799, duration=4.081), FetchedTranscriptSnippet(text='which is happening in just over 90', start=72.96, duration=4.32), FetchedTranscriptSnippet(text='seconds from now. Uh, to get ready, the', start=74.88, duration=4.32), FetchedTranscriptSnippet(text='booster will shut down all but three of', start=77.28, duration=4.159), FetchedTranscriptSnippet(text='its Raptor engines. The clamps holding', start=79.2, duration=4.239), FetchedTranscriptSnippet(text='the two stages together will release,', start=81.439, duration=3.841), FetchedTranscriptSnippet(text='and the Starship second stage ignites', start=83.439, duration=4.32), FetchedTranscriptSnippet(text='its engines.', start=85.28, duration=3.92), FetchedTranscriptSnippet(text=\">> Who's startup?\", start=87.759, duration=4.761), FetchedTranscriptSnippet(text='>> Stage separation.', start=89.2, duration=3.32), FetchedTranscriptSnippet(text=\">> Stage separation confirmed. We've got\", start=96.32, duration=5.439), FetchedTranscriptSnippet(text='six engines running on ship. Booster is', start=98.32, duration=5.36), FetchedTranscriptSnippet(text='doing its boost back burn, continuing', start=101.759, duration=5.201), FetchedTranscriptSnippet(text='now towards its splashdown site in the', start=103.68, duration=4.24), FetchedTranscriptSnippet(text='Gulf.', start=106.96, duration=2.88), FetchedTranscriptSnippet(text='>> We are seeing all six raptors lit up on', start=107.92, duration=4.92), FetchedTranscriptSnippet(text='ship.', start=109.84, duration=3.0), FetchedTranscriptSnippet(text='>> All right, here we go.', start=113.36, duration=5.24), FetchedTranscriptSnippet(text='>> Landing burn startup.', start=114.96, duration=3.64), FetchedTranscriptSnippet(text='Looks like we got 12 of those 13', start=120.32, duration=5.68), FetchedTranscriptSnippet(text='down to three including one of the', start=124.32, duration=4.92), FetchedTranscriptSnippet(text='middle ring', start=126.0, duration=3.24), FetchedTranscriptSnippet(text='down to two.', start=135.599, duration=5.36), FetchedTranscriptSnippet(text='Nice little hover', start=138.64, duration=6.2), FetchedTranscriptSnippet(text='and landing burn shutdown', start=140.959, duration=3.881), FetchedTranscriptSnippet(text='and into the gulf here we come', start=145.04, duration=4.919), FetchedTranscriptSnippet(text='and the booster has splashed down.', start=150.56, duration=9.84), FetchedTranscriptSnippet(text='>> Incredible flight for booster today.', start=155.599, duration=9.0), FetchedTranscriptSnippet(text='>> Meanwhile, back in space,', start=160.4, duration=4.199), FetchedTranscriptSnippet(text='right, shut down the vacuum engines.', start=165.599, duration=4.0), FetchedTranscriptSnippet(text='Ship engine cutoff.', start=177.36, duration=3.28), FetchedTranscriptSnippet(text='>> We shut down the center three.', start=178.64, duration=6.2), FetchedTranscriptSnippet(text='Successful ship engine cutoff', start=180.64, duration=4.2), FetchedTranscriptSnippet(text='today. We also have some actual payload', start=187.519, duration=4.481), FetchedTranscriptSnippet(text='on board and those simulators that', start=189.76, duration=4.72), FetchedTranscriptSnippet(text=\"Starship will be deploying. Um we'll see\", start=192.0, duration=4.64), FetchedTranscriptSnippet(text='coming up here in just a few minutes.', start=194.48, duration=4.0), FetchedTranscriptSnippet(text='These are dummy satellites that are', start=196.64, duration=4.64), FetchedTranscriptSnippet(text='about the same size as our V3 Starlinks.', start=198.48, duration=4.88), FetchedTranscriptSnippet(text='Uh we have eight in the Starship PEZ', start=201.28, duration=4.64), FetchedTranscriptSnippet(text='dispenser and expect to deploy at a rate', start=203.36, duration=4.72), FetchedTranscriptSnippet(text='of about one per minute as Dan mentioned', start=205.92, duration=5.16), FetchedTranscriptSnippet(text='earlier.', start=208.08, duration=3.0), FetchedTranscriptSnippet(text='>> There we go.', start=212.159, duration=3.561), FetchedTranscriptSnippet(text='Pew.', start=234.799, duration=3.36), FetchedTranscriptSnippet(text='Been waiting way too long to do that.', start=236.799, duration=4.681), FetchedTranscriptSnippet(text='There we go.', start=238.159, duration=3.321), FetchedTranscriptSnippet(text='There goes another one.', start=245.68, duration=3.8), FetchedTranscriptSnippet(text='And there you go. One remaining. So,', start=257.12, duration=4.0), FetchedTranscriptSnippet(text='seven of the eight have been deployed.', start=258.799, duration=5.201), FetchedTranscriptSnippet(text='One more to go and then we will have', start=261.12, duration=4.639), FetchedTranscriptSnippet(text='completed our first ever payload deploy', start=264.0, duration=4.08), FetchedTranscriptSnippet(text='operation.', start=265.759, duration=4.561), FetchedTranscriptSnippet(text=\"Just a reminder, we're on a suborbital\", start=268.08, duration=4.88), FetchedTranscriptSnippet(text='trajectory. These satellites on that', start=270.32, duration=4.319), FetchedTranscriptSnippet(text='exact same suborbital trajectory.', start=272.96, duration=4.88), FetchedTranscriptSnippet(text=\"They're going to burn up uh entirely.\", start=274.639, duration=4.881), FetchedTranscriptSnippet(text=\"They're on that same trajectory towards\", start=277.84, duration=4.96), FetchedTranscriptSnippet(text='the Indian Ocean. So, the last one has', start=279.52, duration=6.56), FetchedTranscriptSnippet(text='been deployed.', start=282.8, duration=6.56), FetchedTranscriptSnippet(text='Starlink simulator payload complete.', start=286.08, duration=6.72), FetchedTranscriptSnippet(text='Heck yeah, everybody.', start=289.36, duration=7.2), FetchedTranscriptSnippet(text='>> Loving the energy from Star Hoff.', start=292.8, duration=5.76), FetchedTranscriptSnippet(text='>> All right, so about 55 and a half', start=296.56, duration=3.68), FetchedTranscriptSnippet(text='minutes in. You can see the sun is up.', start=298.56, duration=3.44), FetchedTranscriptSnippet(text='Again, we intentionally designed these', start=300.24, duration=4.399), FetchedTranscriptSnippet(text='flights to lift off in the evening here', start=302.0, duration=4.479), FetchedTranscriptSnippet(text='so we get these daylight views so we can', start=304.639, duration=5.84), FetchedTranscriptSnippet(text='get as good a video as possible on the', start=306.479, duration=5.521), FetchedTranscriptSnippet(text='ship, assuming we make it all the way', start=310.479, duration=4.481), FetchedTranscriptSnippet(text=\"down. We've got at least one buoy\", start=312.0, duration=5.44), FetchedTranscriptSnippet(text=\"powered by Starlink that's out there in\", start=314.96, duration=4.799), FetchedTranscriptSnippet(text='the landing zone in the Indian Ocean,', start=317.44, duration=4.16), FetchedTranscriptSnippet(text='hopefully giving us a view. Again, if', start=319.759, duration=4.561), FetchedTranscriptSnippet(text='you see any live views uh not from the', start=321.6, duration=5.039), FetchedTranscriptSnippet(text='ship itself, that means we nailed our', start=324.32, duration=3.36), FetchedTranscriptSnippet(text='landing target.', start=326.639, duration=3.201), FetchedTranscriptSnippet(text='>> Is passed peak heating.', start=327.68, duration=4.239), FetchedTranscriptSnippet(text=\"So, Starship's doing its belly flop\", start=329.84, duration=4.24), FetchedTranscriptSnippet(text=\"right now. We're going to do the flip\", start=331.919, duration=3.681), FetchedTranscriptSnippet(text=\"swing out. Let's punch through some\", start=334.08, duration=4.92), FetchedTranscriptSnippet(text='clouds first.', start=335.6, duration=3.4), FetchedTranscriptSnippet(text='Here we go.', start=346.96, duration=6.84), FetchedTranscriptSnippet(text='>> Starship landing burn start up.', start=349.44, duration=4.36), FetchedTranscriptSnippet(text='>> Seeing three engines.', start=355.759, duration=3.641), FetchedTranscriptSnippet(text=\"There's our flip.\", start=359.44, duration=3.56), FetchedTranscriptSnippet(text=\"There's a buoy.\", start=364.8, duration=3.48), FetchedTranscriptSnippet(text=\"There's a splash down.\", start=369.6, duration=3.879), FetchedTranscriptSnippet(text='Hey', start=379.039, duration=3.0)], video_id='KYT3NiqI-X8', language='English (auto-generated)', language_code='en', is_generated=True)",
+    "chapters": [
+      {
+        "start_time": 0,
+        "end_time": 32.16,
+        "duration": 32.16,
+        "text": "5 4 3 2 1 [Applause] vehicle pitching range. [Applause] [Applause] Booster chamber pressure now.",
+        "summary": "5 4 3 2 1 [Applause] vehicle pitching...",
+        "word_count": 15
+      },
+      {
+        "start_time": 32.16,
+        "end_time": 67.68,
+        "duration": 35.52000000000001,
+        "text": "All right, we're a little over 40 seconds into flight. 33 out of 30. Avionic power and telemetry nominal. >> Getting good call outs. Healthy systems on the booster as it starts to pitch over over the Gulf. >> We are through the period of maximum dynamic pressure, max stress on the vehicle as it continues to fly. Our next",
+        "summary": "All right, we're a little over 40 seconds...",
+        "word_count": 60
+      },
+      {
+        "start_time": 67.68,
+        "end_time": 98.32,
+        "duration": 30.639999999999986,
+        "text": "major event is going to be hot staging, which is happening in just over 90 seconds from now. Uh, to get ready, the booster will shut down all but three of its Raptor engines. The clamps holding the two stages together will release, and the Starship second stage ignites its engines. >> Who's startup? >> Stage separation. >> Stage separation confirmed. We've got six engines running on ship. Booster is",
+        "summary": "major event is going to be hot staging,...",
+        "word_count": 70
+      },
+      {
+        "start_time": 98.32,
+        "end_time": 135.599,
+        "duration": 37.278999999999996,
+        "text": "doing its boost back burn, continuing now towards its splashdown site in the Gulf. >> We are seeing all six raptors lit up on ship. >> All right, here we go. >> Landing burn startup. Looks like we got 12 of those 13 down to three including one of the middle ring down to two.",
+        "summary": "doing its boost back burn, continuing now towards...",
+        "word_count": 55
+      },
+      {
+        "start_time": 135.599,
+        "end_time": 165.599,
+        "duration": 30.0,
+        "text": "Nice little hover and landing burn shutdown and into the gulf here we come and the booster has splashed down. >> Incredible flight for booster today. >> Meanwhile, back in space, right, shut down the vacuum engines.",
+        "summary": "Nice little hover and landing burn shutdown and...",
+        "word_count": 37
+      },
+      {
+        "start_time": 165.599,
+        "end_time": 208.08,
+        "duration": 42.48100000000002,
+        "text": "Ship engine cutoff. >> We shut down the center three. Successful ship engine cutoff today. We also have some actual payload on board and those simulators that Starship will be deploying. Um we'll see coming up here in just a few minutes. These are dummy satellites that are about the same size as our V3 Starlinks. Uh we have eight in the Starship PEZ dispenser and expect to deploy at a rate of about one per minute as Dan mentioned earlier.",
+        "summary": "Ship engine cutoff. >> We shut down the...",
+        "word_count": 81
+      },
+      {
+        "start_time": 208.08,
+        "end_time": 238.159,
+        "duration": 30.07899999999998,
+        "text": ">> There we go. Pew. Been waiting way too long to do that. There we go.",
+        "summary": ">> There we go. Pew. Been waiting way...",
+        "word_count": 16
+      },
+      {
+        "start_time": 238.159,
+        "end_time": 274.639,
+        "duration": 36.48000000000002,
+        "text": "There goes another one. And there you go. One remaining. So, seven of the eight have been deployed. One more to go and then we will have completed our first ever payload deploy operation. Just a reminder, we're on a suborbital trajectory. These satellites on that exact same suborbital trajectory. They're going to burn up uh entirely.",
+        "summary": "There goes another one. And there you go....",
+        "word_count": 57
+      },
+      {
+        "start_time": 274.639,
+        "end_time": 306.479,
+        "duration": 31.839999999999975,
+        "text": "They're on that same trajectory towards the Indian Ocean. So, the last one has been deployed. Starlink simulator payload complete. Heck yeah, everybody. >> Loving the energy from Star Hoff. >> All right, so about 55 and a half minutes in. You can see the sun is up. Again, we intentionally designed these flights to lift off in the evening here so we get these daylight views so we can get as good a video as possible on the",
+        "summary": "They're on that same trajectory towards the Indian...",
+        "word_count": 79
+      },
+      {
+        "start_time": 306.479,
+        "end_time": 349.44,
+        "duration": 42.96100000000001,
+        "text": "ship, assuming we make it all the way down. We've got at least one buoy powered by Starlink that's out there in the landing zone in the Indian Ocean, hopefully giving us a view. Again, if you see any live views uh not from the ship itself, that means we nailed our landing target. >> Is passed peak heating. So, Starship's doing its belly flop right now. We're going to do the flip swing out. Let's punch through some clouds first. Here we go. >> Starship landing burn start up.",
+        "summary": "ship, assuming we make it all the way...",
+        "word_count": 90
+      }
+    ]
+  },
+  "formats": {
+    "clean_text": "5 4 3 2 1 [Applause] vehicle pitching range. [Applause] [Applause] Booster chamber pressure now. All right, we're a little over 40 seconds into flight. 33 out of 30. Avionic power and telemetry nominal. >> Getting good call outs. Healthy systems on the booster as it starts to pitch over the Gulf. >> We are through the period of maximum dynamic pressure, max stress on the vehicle as it continues to fly. Our next major event is going to be hot staging, which is happening in just over 90 seconds from now. , to get ready, the booster will shut down all but three of its Raptor engines. The clamps holding the two stages together will release, and the Starship second stage ignites its engines. >> Who's startup? >> Stage separation. >> Stage separation confirmed. We've got six engines running on ship. Booster is doing its boost back burn, continuing now towards its splashdown site in the Gulf. >> We are seeing all six raptors lit up on ship. >> All right, here we go. >> Landing burn startup. Looks we got 12 of those 13 down to three including one of the middle ring down to two. Nice little hover and landing burn shutdown and into the gulf here we come and the booster has splashed down. >> Incredible flight for booster today. >> Meanwhile, back in space, right, shut down the vacuum engines. Ship engine cutoff. >> We shut down the center three. Successful ship engine cutoff today. We also have some actual payload on board and those simulators that Starship will be deploying. we'll see coming up here in just a few minutes. These are dummy satellites that are about the same size as our V3 Starlinks. we have eight in the Starship PEZ dispenser and expect to deploy at a rate of about one per minute as Dan mentioned earlier. >> There we go. Pew. Been waiting way too long to do that. There we go. There goes another one. And there you go. One remaining. , seven of the eight have been deployed. One more to go and then we will have completed our first ever payload deploy operation. Just a reminder, we're on a suborbital trajectory. These satellites on that exact same suborbital trajectory. They're going to burn up entirely. They're on that same trajectory towards the Indian Ocean. , the last one has been deployed. Starlink simulator payload complete. Heck yeah, everybody. >> Loving the energy from Star Hoff. >> All right, about 55 and a half minutes in. You can see the sun is up. Again, we intentionally designed these flights to lift off in the evening here we get these daylight views we can get as good a video as possible on the ship, assuming we make it all the way down. We've got at least one buoy powered by Starlink that's out there in the landing zone in the Indian Ocean, hopefully giving us a view. Again, if you see any live views not from the ship itself, that means we nailed our landing target. >> Is passed peak heating. , Starship's doing its belly flop right now. We're going to do the flip swing out. Let's punch through some clouds first. Here we go. >> Starship landing burn start up. >> Seeing three engines. There's our flip. There's a buoy. There's a splash down. Hey",
+    "timestamped_text": "[0.40s] 5 4 3 2 1\n[13.03s] [Applause]\n[17.76s] vehicle pitching range.\n[19.09s] [Applause]\n[25.95s] [Applause]\n[32.16s] Booster chamber pressure now.\n[48.24s] All right, we're a little over 40\n[49.84s] seconds into flight. 33 out of 30.\n[53.20s] Avionic power and telemetry nominal.\n[57.76s] >> Getting good call outs. Healthy systems\n[60.00s] on the booster as it starts to pitch\n[61.76s] over over the Gulf.\n[63.60s] >> We are through the period of maximum\n[65.36s] dynamic pressure, max stress on the\n[67.68s] vehicle as it continues to fly. Our next\n[70.80s] major event is going to be hot staging,\n[72.96s] which is happening in just over 90\n[74.88s] seconds from now. Uh, to get ready, the\n[77.28s] booster will shut down all but three of\n[79.20s] its Raptor engines. The clamps holding\n[81.44s] the two stages together will release,\n[83.44s] and the Starship second stage ignites\n[85.28s] its engines.\n[87.76s] >> Who's startup?\n[89.20s] >> Stage separation.\n[96.32s] >> Stage separation confirmed. We've got\n[98.32s] six engines running on ship. Booster is\n[101.76s] doing its boost back burn, continuing\n[103.68s] now towards its splashdown site in the\n[106.96s] Gulf.\n[107.92s] >> We are seeing all six raptors lit up on\n[109.84s] ship.\n[113.36s] >> All right, here we go.\n[114.96s] >> Landing burn startup.\n[120.32s] Looks like we got 12 of those 13\n[124.32s] down to three including one of the\n[126.00s] middle ring\n[135.60s] down to two.\n[138.64s] Nice little hover\n[140.96s] and landing burn shutdown\n[145.04s] and into the gulf here we come\n[150.56s] and the booster has splashed down.\n[155.60s] >> Incredible flight for booster today.\n[160.40s] >> Meanwhile, back in space,\n[165.60s] right, shut down the vacuum engines.\n[177.36s] Ship engine cutoff.\n[178.64s] >> We shut down the center three.\n[180.64s] Successful ship engine cutoff\n[187.52s] today. We also have some actual payload\n[189.76s] on board and those simulators that\n[192.00s] Starship will be deploying. Um we'll see\n[194.48s] coming up here in just a few minutes.\n[196.64s] These are dummy satellites that are\n[198.48s] about the same size as our V3 Starlinks.\n[201.28s] Uh we have eight in the Starship PEZ\n[203.36s] dispenser and expect to deploy at a rate\n[205.92s] of about one per minute as Dan mentioned\n[208.08s] earlier.\n[212.16s] >> There we go.\n[234.80s] Pew.\n[236.80s] Been waiting way too long to do that.\n[238.16s] There we go.\n[245.68s] There goes another one.\n[257.12s] And there you go. One remaining. So,\n[258.80s] seven of the eight have been deployed.\n[261.12s] One more to go and then we will have\n[264.00s] completed our first ever payload deploy\n[265.76s] operation.\n[268.08s] Just a reminder, we're on a suborbital\n[270.32s] trajectory. These satellites on that\n[272.96s] exact same suborbital trajectory.\n[274.64s] They're going to burn up uh entirely.\n[277.84s] They're on that same trajectory towards\n[279.52s] the Indian Ocean. So, the last one has\n[282.80s] been deployed.\n[286.08s] Starlink simulator payload complete.\n[289.36s] Heck yeah, everybody.\n[292.80s] >> Loving the energy from Star Hoff.\n[296.56s] >> All right, so about 55 and a half\n[298.56s] minutes in. You can see the sun is up.\n[300.24s] Again, we intentionally designed these\n[302.00s] flights to lift off in the evening here\n[304.64s] so we get these daylight views so we can\n[306.48s] get as good a video as possible on the\n[310.48s] ship, assuming we make it all the way\n[312.00s] down. We've got at least one buoy\n[314.96s] powered by Starlink that's out there in\n[317.44s] the landing zone in the Indian Ocean,\n[319.76s] hopefully giving us a view. Again, if\n[321.60s] you see any live views uh not from the\n[324.32s] ship itself, that means we nailed our\n[326.64s] landing target.\n[327.68s] >> Is passed peak heating.\n[329.84s] So, Starship's doing its belly flop\n[331.92s] right now. We're going to do the flip\n[334.08s] swing out. Let's punch through some\n[335.60s] clouds first.\n[346.96s] Here we go.\n[349.44s] >> Starship landing burn start up.\n[355.76s] >> Seeing three engines.\n[359.44s] There's our flip.\n[364.80s] There's a buoy.\n[369.60s] There's a splash down.\n[379.04s] Hey"
+  },
+  "comprehensive_metadata": {
+    "collection_info": {
+      "collected_at": "2025-09-01T18:52:11.487304",
+      "collector_version": "1.0",
+      "analysis_enabled": true
+    },
+    "video_metadata": {
+      "basic_info": {
+        "video_id": "KYT3NiqI-X8",
+        "title": "SpaceX's Tenth Starship Flight Test: Everything That Happened in 6 Minutes",
+        "uploader": "CNET",
+        "uploader_id": "@CNET",
+        "upload_date": "20250827",
+        "duration_seconds": 386,
+        "duration_readable": "6m 26s",
+        "webpage_url": "https://www.youtube.com/watch?v=KYT3NiqI-X8",
+        "original_url": "https://www.youtube.com/watch?v=KYT3NiqI-X8",
+        "extractor": "youtube",
+        "extractor_key": "Youtube"
+      },
+      "technical_details": {
+        "max_resolution": "1080p",
+        "available_qualities": [
+          "1080p",
+          "720p",
+          "480p",
+          "360p",
+          "240p",
+          "144p"
+        ],
+        "total_formats": 63,
+        "video_formats_count": 19,
+        "audio_formats_count": 40,
+        "video_codecs": [
+          "av01",
+          "avc1",
+          "vp9"
+        ],
+        "fps": 30,
+        "aspect_ratio": 1.78,
+        "filesize_approx": 44624490,
+        "protocol": "https+https",
+        "format_note": "1080p+English (US) original (default), medium"
+      },
+      "engagement_metrics": {
+        "view_count": 1361518,
+        "like_count": 11376,
+        "dislike_count": null,
+        "comment_count": 1600,
+        "engagement_rate_percent": 0.84,
+        "views_per_day": 272303.6,
+        "days_since_upload": 5,
+        "age_rating": 0,
+        "availability": "public",
+        "live_status": "not_live",
+        "was_live": false
+      },
+      "channel_info": {
+        "channel": "CNET",
+        "channel_id": "UCOmcA3f_RrH6b9NmcNa4tdg",
+        "channel_url": "https://www.youtube.com/channel/UCOmcA3f_RrH6b9NmcNa4tdg",
+        "channel_follower_count": 4020000,
+        "uploader_url": "https://www.youtube.com/@CNET",
+        "playlist": null,
+        "playlist_id": null,
+        "playlist_index": null,
+        "playlist_title": null
+      },
+      "content_details": {
+        "description": "Watch Starship's tenth flight test from Starbase, Texas, on a suborbital flight. SpaceX successfully deployed eight Starlink satellites, marking the first time it has launched a payload from Starship.\n\n0:00 Countdown\n1:03 Maximum Dynamic Pressure\n1:26 Stage Separation and Boost Back Burn Startup\n1:51 Booster Landing in the Ocean\n2:43 Ship Engine Cutoff\n3:07 Starlink Simulator Deployment\n4:55 Re-entry into the Atmosphere\n5:29 Starship Splashdown and Explosion\n\nAdd CNET as a trusted news source https://www.google.com/preferences/source?q=cnet.com\nNever miss a deal again! See CNET’s browser extension 👉 https://bit.ly/3lO7sOU\nCheck out CNET’s Amazon Storefront: https://www.amazon.com/shop/cnet\nSubscribe to CNET on YouTube: https://www.youtube.com/cnet\nFollow us on TikTok: https://www.tiktok.com/@cnetdotcom\nFollow us on Instagram: https://www.instagram.com/cnet\nFollow us on Bluesky: https://bsky.app/profile/cnet.com\nLike us on Facebook: https://www.facebook.com/cnet\nCNET's AI Atlas: https://www.cnet.com/ai-atlas\nFollow us on X: https://www.x.com/cnet\nVisit CNET.com:  https://www.cnet.com\n\n#space #spacex #starship #spacexlaunch #spaceexploration",
+        "description_length": 1157,
+        "tags": [
+          "CNET",
+          "Technology",
+          "tech",
+          "Tech Devices",
+          "supercut",
+          "spacex",
+          "spacex launch",
+          "SpaceX Starship",
+          "Starship Flight Test 10",
+          "Starship's tenth flight test",
+          "SpaceX test launch",
+          "Starbase Texas",
+          "Spacex test launch",
+          "spacex rocket launch",
+          "spacex launch highlights",
+          "spacex starship launch",
+          "spacex starlink satellites",
+          "starlink",
+          "spacex payload",
+          "Starship splashdown"
+        ],
+        "tag_count": 20,
+        "categories": [
+          "Science & Technology"
+        ],
+        "category_count": 1,
+        "language": "en-US",
+        "automatic_captions": [
+          "ab",
+          "aa",
+          "af",
+          "ak",
+          "sq",
+          "am",
+          "ar",
+          "hy",
+          "as",
+          "ay",
+          "az",
+          "bn",
+          "ba",
+          "eu",
+          "be",
+          "bho",
+          "bs",
+          "br",
+          "bg",
+          "my",
+          "ca",
+          "ceb",
+          "zh-Hans",
+          "zh-Hant",
+          "co",
+          "hr",
+          "cs",
+          "da",
+          "dv",
+          "nl",
+          "dz",
+          "en-orig",
+          "en",
+          "eo",
+          "et",
+          "ee",
+          "fo",
+          "fj",
+          "fil",
+          "fi",
+          "fr",
+          "gaa",
+          "gl",
+          "lg",
+          "ka",
+          "de",
+          "el",
+          "gn",
+          "gu",
+          "ht",
+          "ha",
+          "haw",
+          "iw",
+          "hi",
+          "hmn",
+          "hu",
+          "is",
+          "ig",
+          "id",
+          "iu",
+          "ga",
+          "it",
+          "ja",
+          "jv",
+          "kl",
+          "kn",
+          "kk",
+          "kha",
+          "km",
+          "rw",
+          "ko",
+          "kri",
+          "ku",
+          "ky",
+          "lo",
+          "la",
+          "lv",
+          "ln",
+          "lt",
+          "lua",
+          "luo",
+          "lb",
+          "mk",
+          "mg",
+          "ms",
+          "ml",
+          "mt",
+          "gv",
+          "mi",
+          "mr",
+          "mn",
+          "mfe",
+          "ne",
+          "new",
+          "nso",
+          "no",
+          "ny",
+          "oc",
+          "or",
+          "om",
+          "os",
+          "pam",
+          "ps",
+          "fa",
+          "pl",
+          "pt",
+          "pt-PT",
+          "pa",
+          "qu",
+          "ro",
+          "rn",
+          "ru",
+          "sm",
+          "sg",
+          "sa",
+          "gd",
+          "sr",
+          "crs",
+          "sn",
+          "sd",
+          "si",
+          "sk",
+          "sl",
+          "so",
+          "st",
+          "es",
+          "su",
+          "sw",
+          "ss",
+          "sv",
+          "tg",
+          "ta",
+          "tt",
+          "te",
+          "th",
+          "bo",
+          "ti",
+          "to",
+          "ts",
+          "tn",
+          "tum",
+          "tr",
+          "tk",
+          "uk",
+          "ur",
+          "ug",
+          "uz",
+          "ve",
+          "vi",
+          "war",
+          "cy",
+          "fy",
+          "wo",
+          "xh",
+          "yi",
+          "yo",
+          "zu"
+        ],
+        "subtitles": [],
+        "thumbnail": "https://i.ytimg.com/vi_webp/KYT3NiqI-X8/maxresdefault.webp",
+        "thumbnails_count": 43,
+        "chapters": [
+          {
+            "start_time": 0.0,
+            "title": "Countdown",
+            "end_time": 63.0
+          },
+          {
+            "start_time": 63.0,
+            "title": "Maximum Dynamic Pressure",
+            "end_time": 86.0
+          },
+          {
+            "start_time": 86.0,
+            "title": "Stage Separation and Boost Back Burn Startup",
+            "end_time": 111.0
+          },
+          {
+            "start_time": 111.0,
+            "title": "Booster Landing in the Ocean",
+            "end_time": 163.0
+          },
+          {
+            "start_time": 163.0,
+            "title": "Ship Engine Cutoff",
+            "end_time": 187.0
+          },
+          {
+            "start_time": 187.0,
+            "title": "Starlink Simulator Deployment",
+            "end_time": 295.0
+          },
+          {
+            "start_time": 295.0,
+            "title": "Re-entry into the Atmosphere",
+            "end_time": 329.0
+          },
+          {
+            "start_time": 329.0,
+            "title": "Starship Splashdown and Explosion",
+            "end_time": 386
+          }
+        ],
+        "chapter_count": 8
+      }
+    },
+    "transcript_analysis": {
+      "content_metrics": {
+        "word_count": 575,
+        "sentence_count": 63,
+        "character_count": 3155,
+        "character_count_no_spaces": 2581,
+        "average_words_per_sentence": 9.126984126984127,
+        "average_sentence_length": 48.111111111111114,
+        "speaking_rate_wpm": 91.0,
+        "estimated_reading_time_minutes": 2.9,
+        "lexical_diversity": 0.5495652173913044,
+        "total_duration_seconds": 379.039,
+        "transcript_entries_count": 104
+      },
+      "quality_assessment": {
+        "quality_score": 90.4,
+        "artifact_count": 52,
+        "artifact_ratio": 0.09,
+        "incomplete_indicators": 6,
+        "incomplete_ratio": 0.01,
+        "average_entry_length": 29.3,
+        "entry_consistency": 0.07,
+        "quality_category": "Excellent"
+      },
+      "content_analysis": {
+        "keywords": [
+          {
+            "keyword": "down",
+            "frequency": 8,
+            "relevance_score": 2.32
+          },
+          {
+            "keyword": "there",
+            "frequency": 8,
+            "relevance_score": 2.32
+          },
+          {
+            "keyword": "one",
+            "frequency": 7,
+            "relevance_score": 2.03
+          },
+          {
+            "keyword": "booster",
+            "frequency": 6,
+            "relevance_score": 1.74
+          },
+          {
+            "keyword": "all",
+            "frequency": 6,
+            "relevance_score": 1.74
+          },
+          {
+            "keyword": "ship",
+            "frequency": 6,
+            "relevance_score": 1.74
+          },
+          {
+            "keyword": "right",
+            "frequency": 5,
+            "relevance_score": 1.45
+          },
+          {
+            "keyword": "engines",
+            "frequency": 5,
+            "relevance_score": 1.45
+          },
+          {
+            "keyword": "starship",
+            "frequency": 5,
+            "relevance_score": 1.45
+          },
+          {
+            "keyword": "burn",
+            "frequency": 5,
+            "relevance_score": 1.45
+          },
+          {
+            "keyword": "here",
+            "frequency": 5,
+            "relevance_score": 1.45
+          },
+          {
+            "keyword": "landing",
+            "frequency": 5,
+            "relevance_score": 1.45
+          },
+          {
+            "keyword": "now",
+            "frequency": 4,
+            "relevance_score": 1.16
+          },
+          {
+            "keyword": "over",
+            "frequency": 4,
+            "relevance_score": 1.16
+          },
+          {
+            "keyword": "three",
+            "frequency": 4,
+            "relevance_score": 1.16
+          },
+          {
+            "keyword": "applause",
+            "frequency": 3,
+            "relevance_score": 0.87
+          },
+          {
+            "keyword": "out",
+            "frequency": 3,
+            "relevance_score": 0.87
+          },
+          {
+            "keyword": "gulf",
+            "frequency": 3,
+            "relevance_score": 0.87
+          },
+          {
+            "keyword": "going",
+            "frequency": 3,
+            "relevance_score": 0.87
+          },
+          {
+            "keyword": "just",
+            "frequency": 3,
+            "relevance_score": 0.87
+          }
+        ],
+        "topics": [
+          "Starship PEZ",
+          "Star Hoff",
+          "One Per Minute As Da",
+          "The Same Size As Our",
+          "Indian Ocean",
+          "Do The Flip Swing Ou"
+        ],
+        "language_analysis": {
+          "detected_language": "English",
+          "english_probability": 0.16,
+          "average_words_per_sentence": 9.1,
+          "complexity_ratio": 0.2,
+          "readability_level": "Moderate"
+        },
+        "content_type": {
+          "primary_category": "General",
+          "category_scores": {
+            "Educational": 0,
+            "Entertainment": 0,
+            "News/Documentary": 0,
+            "Technical": 0
+          },
+          "confidence": 0
+        }
+      }
+    },
+    "content_summary": {
+      "overview": {
+        "title": "SpaceX's Tenth Starship Flight Test: Everything That Happened in 6 Minutes",
+        "duration": "6m 26s",
+        "uploader": "CNET",
+        "upload_date": "20250827",
+        "view_count": 1361518
+      },
+      "content_insights": {
+        "primary_topics": [
+          "Starship PEZ",
+          "Star Hoff",
+          "One Per Minute As Da",
+          "The Same Size As Our",
+          "Indian Ocean"
+        ],
+        "key_keywords": [
+          "down",
+          "there",
+          "one",
+          "booster",
+          "all",
+          "ship",
+          "right",
+          "engines",
+          "starship",
+          "burn"
+        ],
+        "content_category": "General",
+        "language": "English"
+      },
+      "quality_indicators": {
+        "overall_quality": "Excellent",
+        "quality_score": 90.4,
+        "transcript_completeness": 99.0
+      },
+      "llm_suitability": {
+        "overall_score": 71.9,
+        "length_suitability": "Ideal Length",
+        "recommended_for_llm": true,
+        "processing_notes": [
+          "Good quality content suitable for direct LLM analysis"
+        ]
+      }
+    }
+  },
+  "content_summary": {
+    "overview": {
+      "title": "SpaceX's Tenth Starship Flight Test: Everything That Happened in 6 Minutes",
+      "duration": "6m 26s",
+      "uploader": "CNET",
+      "upload_date": "20250827",
+      "view_count": 1361518
+    },
+    "content_insights": {
+      "primary_topics": [
+        "Starship PEZ",
+        "Star Hoff",
+        "One Per Minute As Da",
+        "The Same Size As Our",
+        "Indian Ocean"
+      ],
+      "key_keywords": [
+        "down",
+        "there",
+        "one",
+        "booster",
+        "all",
+        "ship",
+        "right",
+        "engines",
+        "starship",
+        "burn"
+      ],
+      "content_category": "General",
+      "language": "English"
+    },
+    "quality_indicators": {
+      "overall_quality": "Excellent",
+      "quality_score": 90.4,
+      "transcript_completeness": 99.0
+    },
+    "llm_suitability": {
+      "overall_score": 71.9,
+      "length_suitability": "Ideal Length",
+      "recommended_for_llm": true,
+      "processing_notes": [
+        "Good quality content suitable for direct LLM analysis"
+      ]
+    }
+  }
+}
