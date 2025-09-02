@@ -4,6 +4,8 @@ Test runner script for YouTube Downloader testing framework.
 
 This script provides convenient commands for running different test suites
 and generating coverage reports.
+
+python run_tests.py all
 """
 
 import sys

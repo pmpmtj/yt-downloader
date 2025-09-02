@@ -102,11 +102,11 @@ class TestFormatSelection:
             }
         }
         
-        with patch('src.my_project.core.load_config', return_value=mock_config):
-            result = select_default_audio(mock_video_info)
+        with patch('src.my_project.utils.path_utils.load_config', return_value=mock_config):
+            result_format, result_list = select_default_audio(mock_video_info["formats"])
             
-            assert result is not None
-            assert "format_id" in result
+            assert result_format is not None
+            assert "format_id" in result_format
     
     @pytest.mark.unit
     def test_select_video_format_fallback_logic(self, mock_video_info):
@@ -124,11 +124,11 @@ class TestFormatSelection:
             }
         }
         
-        with patch('src.my_project.core.load_config', return_value=mock_config):
-            result = select_default_video(mock_video_info)
+        with patch('src.my_project.utils.path_utils.load_config', return_value=mock_config):
+            result_format, result_list = select_default_video(mock_video_info["formats"])
             
-            assert result is not None
-            assert "format_id" in result
+            assert result_format is not None
+            assert "format_id" in result_format
     
     @pytest.mark.unit
     def test_select_format_no_preferred_available(self, mock_video_info):
@@ -146,11 +146,11 @@ class TestFormatSelection:
             }
         }
         
-        with patch('src.my_project.core.load_config', return_value=mock_config):
-            result = select_default_audio(mock_video_info)
+        with patch('src.my_project.utils.path_utils.load_config', return_value=mock_config):
+            result_format, result_list = select_default_audio(mock_video_info["formats"])
             
             # Should fall back to available format
-            assert result is not None
+            assert result_format is not None
 
 
 class TestTranscriptDiscovery:
@@ -161,7 +161,7 @@ class TestTranscriptDiscovery:
         """Test transcript discovery with available languages."""
         from src.my_project.core import list_transcript_metadata
         
-        with patch('src.my_project.core.YouTubeTranscriptApi.list_transcripts', 
+        with patch('src.my_project.core.YouTubeTranscriptApi.list', 
                    return_value=mock_transcript_list):
             
             result = list_transcript_metadata(VALID_VIDEO_ID)
@@ -175,7 +175,7 @@ class TestTranscriptDiscovery:
         """Test handling when no transcripts are available."""
         from src.my_project.core import list_transcript_metadata
         
-        with patch('src.my_project.core.YouTubeTranscriptApi.list_transcripts') as mock_api:
+        with patch('src.my_project.core.YouTubeTranscriptApi.list') as mock_api:
             mock_api.side_effect = Exception("No transcripts available")
             
             result = list_transcript_metadata(INVALID_VIDEO_ID)
@@ -194,7 +194,7 @@ class TestTranscriptDiscovery:
         mock_transcript.is_translatable = True
         mock_transcript_list.__iter__ = Mock(return_value=iter([mock_transcript]))
         
-        with patch('src.my_project.core.YouTubeTranscriptApi.list_transcripts',
+        with patch('src.my_project.core.YouTubeTranscriptApi.list',
                    return_value=mock_transcript_list):
             
             result = list_transcript_metadata(VALID_VIDEO_ID)
@@ -219,7 +219,7 @@ class TestTranscriptDiscovery:
         
         mock_transcript_list.__iter__ = Mock(return_value=iter([en_transcript, es_transcript]))
         
-        with patch('src.my_project.core.YouTubeTranscriptApi.list_transcripts',
+        with patch('src.my_project.core.YouTubeTranscriptApi.list',
                    return_value=mock_transcript_list):
             
             result = list_transcript_metadata(VALID_VIDEO_ID)
@@ -236,33 +236,37 @@ class TestPreviewGeneration:
         """Test basic transcript preview generation."""
         from src.my_project.core import preview_transcript
         
-        with patch('src.my_project.core.YouTubeTranscriptApi.list_transcripts') as mock_api:
-            mock_list = Mock()
+        with patch('src.my_project.core.YouTubeTranscriptApi.list') as mock_api:
+            # Create a mock transcript object that can be iterated
             mock_transcript = Mock()
+            mock_transcript.language_code = "en"
             mock_transcript.fetch.return_value = sample_transcript_data
-            mock_list.find_transcript.return_value = mock_transcript
-            mock_api.return_value = mock_list
+            
+            # Mock the list to return an iterable containing our transcript
+            mock_api.return_value = [mock_transcript]
             
             result = preview_transcript(VALID_VIDEO_ID, "en", include_metadata=False)
             
             assert result is not None
             assert "preview_text" in result
             assert "statistics" in result
-            assert "total_entries" in result["statistics"]
+            assert "word_count" in result["statistics"]
     
     @pytest.mark.unit
     def test_preview_transcript_with_metadata(self, sample_transcript_data):
         """Test preview generation with metadata analysis enabled."""
         from src.my_project.core import preview_transcript
         
-        with patch('src.my_project.core.YouTubeTranscriptApi.list_transcripts') as mock_api:
-            mock_list = Mock()
+        with patch('src.my_project.core.YouTubeTranscriptApi.list') as mock_api:
+            # Create a mock transcript object that can be iterated
             mock_transcript = Mock()
+            mock_transcript.language_code = "en"
             mock_transcript.fetch.return_value = sample_transcript_data
-            mock_list.find_transcript.return_value = mock_transcript
-            mock_api.return_value = mock_list
             
-            with patch('src.my_project.core.load_config') as mock_config:
+            # Mock the list to return an iterable containing our transcript
+            mock_api.return_value = [mock_transcript]
+            
+            with patch('src.my_project.utils.path_utils.load_config') as mock_config:
                 mock_config.return_value = {"metadata_collection": {"enabled": True}}
                 
                 result = preview_transcript(VALID_VIDEO_ID, "en", include_metadata=True)
@@ -277,7 +281,7 @@ class TestPreviewGeneration:
         """Test preview generation when transcript is unavailable."""
         from src.my_project.core import preview_transcript
         
-        with patch('src.my_project.core.YouTubeTranscriptApi.list_transcripts') as mock_api:
+        with patch('src.my_project.core.YouTubeTranscriptApi.list') as mock_api:
             mock_api.side_effect = Exception("No transcript available")
             
             result = preview_transcript(INVALID_VIDEO_ID, "en")
@@ -307,15 +311,15 @@ class TestErrorHandling:
         """Test handling of invalid configuration."""
         from src.my_project.core import select_default_audio
         
-        with patch('src.my_project.core.load_config') as mock_config:
+        with patch('src.my_project.utils.path_utils.load_config') as mock_config:
             mock_config.side_effect = Exception("Config file not found")
             
             # Should use reasonable defaults when config fails
             mock_video_info = {"formats": [{"format_id": "140", "ext": "m4a"}]}
-            result = select_default_audio(mock_video_info)
+            result_format, result_list = select_default_audio(mock_video_info["formats"])
             
             # Should still work with defaults
-            assert result is not None or True  # Allow graceful degradation
+            assert result_format is not None or True  # Allow graceful degradation
 
 
 # Fixtures for this test module

@@ -116,12 +116,12 @@ def download_video_with_fallback(url: str, video_formats: list, save_path: str, 
     
     return False
 
-def parse_args():
+def parse_args(args=None):
     parser = argparse.ArgumentParser(
         description="YouTube Downloader CLI — select language, quality, media types"
     )
 
-    parser.add_argument("urls", nargs="+", help="YouTube video URL(s) or playlist URL(s) to process")
+    parser.add_argument("urls", nargs="*", help="YouTube video URL(s) or playlist URL(s) to process")
     parser.add_argument("--lang", type=str, default=None, help="Preferred transcript/audio language (e.g. en, pt-BR)")
     parser.add_argument("--quality", type=str, default=None, help="Preferred video quality (e.g. 720p, 1080p)")
     parser.add_argument("--audio", action="store_true", help="Download audio only")
@@ -143,7 +143,7 @@ def parse_args():
     parser.add_argument("--playlist-start", type=int, default=1, help="Playlist video to start at (default: 1)")
     parser.add_argument("--playlist-end", type=int, default=None, help="Playlist video to end at")
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
 def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, args) -> dict:

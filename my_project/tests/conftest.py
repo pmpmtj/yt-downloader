@@ -110,6 +110,7 @@ def mock_video_info():
                 "format": "m4a audio only",
                 "ext": "m4a",
                 "acodec": "mp4a.40.2",
+                "vcodec": "none",
                 "abr": 128,
                 "filesize": 3400000,
                 "quality": "medium"
@@ -121,6 +122,7 @@ def mock_video_info():
                 "width": 1280,
                 "height": 720,
                 "vcodec": "avc1.4d401f",
+                "acodec": "none",
                 "filesize": 45000000,
                 "quality": "720p"
             }

@@ -21,18 +21,22 @@ logger = setup_logger("core")
 
 # -------------------- Core Functions --------------------
 
-def get_video_info(url: str) -> Dict:
+def get_video_info(url: str) -> Optional[Dict]:
     logger.debug(f"Extracting video info for URL: {url}")
     ydl_opts = {
         'quiet': True,
         'skip_download': True,
         'forcejson': True,
     }
-    with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        logger.debug(f"Extracted info for video: {info.get('title', 'Unknown title')} (ID: {info.get('id', 'Unknown ID')})")
-        logger.debug(f"Found {len(info.get('formats', []))} formats")
-        return info
+    try:
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            logger.debug(f"Extracted info for video: {info.get('title', 'Unknown title')} (ID: {info.get('id', 'Unknown ID')})")
+            logger.debug(f"Found {len(info.get('formats', []))} formats")
+            return info
+    except Exception as e:
+        logger.error(f"Failed to extract video info for {url}: {e}")
+        return None
 
 
 # -------------------- Format Filtering --------------------
@@ -245,12 +249,16 @@ def _get_transcript_list(video_id: str):
         api = YouTubeTranscriptApi()
         return api.list(video_id)
     except AttributeError:
-        return YouTubeTranscriptApi.list_transcripts(video_id)
+        return YouTubeTranscriptApi.list(video_id)
 
 
 def list_transcript_metadata(video_id: str) -> List[Dict[str, Any]]:
     logger.debug(f"Listing transcript metadata for video_id: {video_id}")
-    transcript_list = _get_transcript_list(video_id)
+    try:
+        transcript_list = _get_transcript_list(video_id)
+    except Exception as e:
+        logger.error(f"Failed to get transcript list for {video_id}: {e}")
+        return []
 
     meta = []
     for t in transcript_list:
