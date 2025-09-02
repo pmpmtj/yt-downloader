@@ -88,7 +88,7 @@ class TestBasicCLIWorkflows:
                     mock_args.transcript = True
                     mock_args.transcript_formats = ["all"]
                     mock_args.audio = False
-                    mock_args.video = False
+                    mock_args.video_only = False
                     mock_args.preview_transcript = False
                     mock_args.metadata_analysis = False
                     mock_args.metadata_export = None
@@ -123,7 +123,7 @@ class TestBasicCLIWorkflows:
                         mock_args.transcript = True
                         mock_args.transcript_formats = ["clean"]
                         mock_args.audio = False
-                        mock_args.video = False
+                        mock_args.video_only = False
                         mock_args.preview_transcript = False
                         mock_args.metadata_analysis = False
                         mock_args.metadata_export = "json"
@@ -320,7 +320,7 @@ class TestWorkflowIntegration:
                 preview_args = Mock()
                 preview_args.transcript = False
                 preview_args.audio = False
-                preview_args.video = False
+                preview_args.video_only = False
                 preview_args.preview_transcript = True
                 preview_args.metadata_analysis = True
                 preview_args.metadata_export = None
@@ -342,7 +342,7 @@ class TestWorkflowIntegration:
                 download_args.transcript = True
                 download_args.transcript_formats = ["clean"]
                 download_args.audio = False
-                download_args.video = False
+                download_args.video_only = False
                 download_args.preview_transcript = False
                 download_args.metadata_analysis = False
                 download_args.metadata_export = None

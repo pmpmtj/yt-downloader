@@ -18,7 +18,7 @@ python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" 
 python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-with-audio
 
 # Download video only (silent - no audio)
-python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video
+python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-only
 
 # Get info without downloading
 python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --info-only
@@ -62,20 +62,20 @@ python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" 
 - **Smart Format Selection**: Uses yt-dlp's intelligent format merging
 - **Example**:
   ```bash
-  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-with-audio
+  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-only-with-audio
   
   # With quality control
-  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-with-audio --quality 1080p
+  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-only-with-audio --quality 1080p
   ```
 
-#### `--video`
+#### `--video-only`
 - **Description**: Download video only (⚠️ **SILENT VIDEO - NO AUDIO**)
 - **Default Quality**: 720p
 - **Preferred Format**: MP4
 - **Use Case**: Specialized workflows requiring video-only streams
 - **Example**:
   ```bash
-  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video
+  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-only
   ```
 
 #### `--transcript`
@@ -150,17 +150,17 @@ python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" 
 ### Quality & Language Settings
 
 #### `--quality`
-- **Description**: Preferred video quality (works with `--video` and `--video-with-audio`)
+- **Description**: Preferred video quality (works with `--video-only` and `--video-with-audio`)
 - **Common Values**: `144p`, `240p`, `360p`, `480p`, `720p`, `1080p`
 - **Default**: `720p` (from config)
 - **Smart Fallback**: Automatically tries alternative qualities if preferred isn't available
 - **Examples**:
   ```bash
   # Video with audio at 1080p
-  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-with-audio --quality 1080p
+  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-only-with-audio --quality 1080p
   
   # Video only at 480p
-  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video --quality 480p
+  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-only-only --quality 480p
   ```
 
 #### `--lang`
@@ -420,7 +420,7 @@ downloads/
 - **Video Only** (`video/`): `{video_title}.mp4` - ⚠️ **Silent video files (no audio)**
 - **Quality**: Based on smart selection algorithm with CLI override support
 - **Fallback**: Multiple quality attempts if preferred fails
-- **Format Selection**: Intelligent merging for video+audio, video-only streams for `--video`
+- **Format Selection**: Intelligent merging for video+audio, video-only streams for `--video-only`
 
 #### 🆕 Enhanced Transcript Files
 - **Clean**: `{video_id}_{language}_clean.txt` - Perfect for LLM input
@@ -556,7 +556,7 @@ python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" 
 - **File location**: `video_with_audio/` subfolder
 - **Quality control**: Full support for `--quality` parameter
 
-#### `--video` (⚠️ **SILENT VIDEO**)
+#### `--video-only` (⚠️ **SILENT VIDEO**)
 - **What you get**: Video-only stream without audio
 - **Use cases**: Video analysis, silent video overlays, specialized workflows
 - **Technical**: Selects video-only formats (vcodec != 'none', acodec == 'none')
@@ -569,7 +569,7 @@ python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" 
 python -m src.my_project.core_CLI "URL" --audio --video-with-audio
 
 # Download audio, silent video, and video+audio (all formats)
-python -m src.my_project.core_CLI "URL" --audio --video --video-with-audio
+python -m src.my_project.core_CLI "URL" --audio --video-only --video-with-audio
 ```
 
 ### Session Management

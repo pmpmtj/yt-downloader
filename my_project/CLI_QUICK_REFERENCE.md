@@ -15,7 +15,7 @@ python -m my_project [URLs...] [OPTIONS]
 | **Flag** | **Type** | **Default** | **Description** | **Notes** |
 |----------|----------|-------------|-----------------|-----------|
 | `--audio` | flag | `False` | Download audio only (MP3 format) | 192kbps quality |
-| `--video` | flag | `False` | Download video only (⚠️ **silent - no audio**) | Video-only stream |
+| `--video-only` | flag | `False` | Download video only (⚠️ **silent - no audio**) | Video-only stream |
 | `--video-with-audio` | flag | `False` | Download video with audio included | ⭐ **Recommended** |
 | `--transcript` | flag | `False` | Download enhanced transcripts | Multiple formats available |
 
@@ -113,7 +113,7 @@ python -m my_project https://youtube.com/playlist?list=xyz --playlist-start 5 --
 
 ## **⚠️ Important Notes**
 
-- **`--video` flag produces silent videos** (video-only streams without audio)
+- **`--video-only` flag produces silent videos** (video-only streams without audio)
 - **`--video-with-audio` is recommended** for complete video files
 - **Multiple URLs supported**: Space-separated on command line
 - **Batch files**: One URL per line, `#` for comments

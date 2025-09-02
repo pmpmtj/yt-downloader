@@ -135,7 +135,7 @@ def parse_args(args=None):
     parser.add_argument("--lang", type=str, default=None, help="Preferred transcript/audio language (e.g. en, pt-BR)")
     parser.add_argument("--quality", type=str, default=None, help="Preferred video quality (e.g. 720p, 1080p)")
     parser.add_argument("--audio", action="store_true", help="Download audio only")
-    parser.add_argument("--video", action="store_true", help="Download video only (silent - no audio)")
+    parser.add_argument("--video-only", action="store_true", help="Download video only (silent - no audio)")
     parser.add_argument("--video-with-audio", action="store_true", help="Download video with audio included")
     parser.add_argument("--transcript", action="store_true", help="Download transcript only (if available)")
     parser.add_argument("--transcript-formats", type=str, nargs="+", 
@@ -188,7 +188,7 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
             print_transcript_preview(info.get("id"), default_transcript.get("language_code"))
 
         # Step 4: Print info if requested
-        if args.info_only or not (args.audio or args.video or args.video_with_audio or args.transcript):
+        if args.info_only or not (args.audio or args.video_only or args.video_with_audio or args.transcript):
             print_audio_formats(audio_list, default_audio)
             print_video_formats(video_list, default_video)
             if combined_list:
@@ -210,7 +210,7 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
         success_count = 0
         total_requested = sum([
             bool(args.audio and default_audio), 
-            bool(args.video and default_video), 
+            bool(args.video_only and default_video), 
             bool(args.video_with_audio and default_combined),
             bool(args.transcript and default_transcript)
         ])
@@ -232,7 +232,7 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
             except Exception as e:
                 print(f"💥 Audio download error: {str(e)}")
 
-        if args.video and default_video:
+        if args.video_only and default_video:
             try:
                 video_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "video")
                 template = get_filename_template()
