@@ -16,9 +16,26 @@ from .logger_utils.logger_utils import setup_logger
 # Setup logger for this module
 logger = setup_logger("yt_downloads_utils")
 
+def get_filename_template(save_path: Optional[str] = None) -> str:
+    """Get filename template from config with fallback to default."""
+    if save_path:
+        return save_path
+    
+    try:
+        from .utils.path_utils import load_config
+        config = load_config()
+        template = config.get("downloads", {}).get("filename_template", "%(title)s [%(id)s].%(ext)s")
+        logger.debug(f"Using filename template from config: {template}")
+        return template
+    except Exception as e:
+        logger.warning(f"Failed to load filename template from config: {e}")
+        fallback_template = "%(title)s [%(id)s].%(ext)s"
+        logger.debug(f"Using fallback filename template: {fallback_template}")
+        return fallback_template
+
 def download_audio(url: str, format_id: str, save_path: Optional[str] = None, max_retries: int = 3, retry_delay: int = 2):
     """Download audio with retry logic and error handling."""
-    outtmpl = save_path or '%(title)s.%(ext)s'
+    outtmpl = get_filename_template(save_path)
     logger.info(f"Starting audio download: format_id={format_id}, save_path={save_path}")
     
     opts = {
@@ -57,7 +74,7 @@ def download_audio(url: str, format_id: str, save_path: Optional[str] = None, ma
 
 def download_video(url: str, format_id: str, save_path: Optional[str] = None, max_retries: int = 3, retry_delay: int = 2):
     """Download video with retry logic and error handling."""
-    outtmpl = save_path or '%(title)s.%(ext)s'
+    outtmpl = get_filename_template(save_path)
     logger.info(f"Starting video download: format_id={format_id}, save_path={save_path}")
     
     opts = {
@@ -91,7 +108,7 @@ def download_video(url: str, format_id: str, save_path: Optional[str] = None, ma
 
 def download_video_with_audio(url: str, quality_preference: str = "720p", save_path: Optional[str] = None, max_retries: int = 3, retry_delay: int = 2):
     """Download video with audio using intelligent format selection."""
-    outtmpl = save_path or '%(title)s.%(ext)s'
+    outtmpl = get_filename_template(save_path)
     logger.info(f"Starting video+audio download: quality={quality_preference}, save_path={save_path}")
     
     # Create intelligent format selector based on quality preference

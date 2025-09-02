@@ -34,7 +34,8 @@ from .yt_downloads_utils import (
     download_audio,
     download_video,
     download_video_with_audio,
-    download_transcript
+    download_transcript,
+    get_filename_template
 )
 
 # Import logging
@@ -219,8 +220,9 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
         if args.audio and default_audio:
             try:
                 audio_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "audio")
-                filename = os.path.join(str(audio_dir), f"%(title)s.%(ext)s")
-                print(f"\nDownloading audio to: {audio_dir}/%(title)s.%(ext)s")
+                template = get_filename_template()
+                filename = os.path.join(str(audio_dir), template)
+                print(f"\nDownloading audio to: {audio_dir}/{template}")
                 
                 if download_audio_with_fallback(url, audio_list, filename):
                     success_count += 1
@@ -233,8 +235,9 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
         if args.video and default_video:
             try:
                 video_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "video")
-                filename = os.path.join(str(video_dir), f"%(title)s.%(ext)s")
-                print(f"\nDownloading video to: {video_dir}/%(title)s.%(ext)s")
+                template = get_filename_template()
+                filename = os.path.join(str(video_dir), template)
+                print(f"\nDownloading video to: {video_dir}/{template}")
                 
                 if download_video_with_fallback(url, video_list, filename):
                     success_count += 1
@@ -247,8 +250,9 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
         if args.video_with_audio and default_combined:
             try:
                 video_audio_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "video_with_audio")
-                filename = os.path.join(str(video_audio_dir), f"%(title)s.%(ext)s")
-                print(f"\nDownloading video+audio to: {video_audio_dir}/%(title)s.%(ext)s")
+                template = get_filename_template()
+                filename = os.path.join(str(video_audio_dir), template)
+                print(f"\nDownloading video+audio to: {video_audio_dir}/{template}")
                 
                 # Use the intelligent video+audio downloader with quality preference
                 quality_pref = args.quality or "720p"

@@ -3,7 +3,8 @@
         "base_directory": "downloads",
         "create_session_folders": true,
         "create_video_folders": true,
-        "folder_structure": "{session_uuid}/{video_uuid}/{media_type}"
+        "folder_structure": "{session_uuid}/{video_uuid}/{media_type}",
+        "filename_template": "%(title)s [%(id)s].%(ext)s"
     },
     "quality_preferences": {
         "video": {

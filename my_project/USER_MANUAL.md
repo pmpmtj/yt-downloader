@@ -582,6 +582,12 @@ The application uses intelligent scoring to select the best available formats ba
 - **File size considerations**
 - **Availability and compatibility**
 
+### Deterministic File Naming
+Files are saved using a deterministic naming convention that includes the video ID to prevent collisions and enable database joins:
+- **Format**: `Title [video_id].ext` (e.g., `My Video [dQw4w9WgXcQ].mp4`)
+- **Benefits**: Prevents overwrites, enables database relationships, handles special characters
+- **Configurable**: Set via `downloads.filename_template` in app_config.json
+
 ### Error Handling & Retries
 - **Network failures**: Automatic retry with exponential backoff
 - **Format failures**: Fallback to alternative formats

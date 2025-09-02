@@ -154,6 +154,16 @@ output_directory/
     ├── video_id_metadata.json            # Comprehensive metadata
     ├── video_id_analysis.csv             # Content analysis summary
     └── video_id_report.md                # Human-readable report
+
+## 📁 Deterministic File Naming
+
+All downloaded media files use a deterministic naming convention:
+- **Format**: `Title [video_id].ext` (e.g., `My Amazing Video [dQw4w9WgXcQ].mp4`)
+- **Benefits**: 
+  - Prevents file overwrites from duplicate titles
+  - Enables easy database joins using video_id
+  - Handles special characters and long titles safely
+  - Consistent with transcript naming patterns
 ```
 
 ### Video Download Options
