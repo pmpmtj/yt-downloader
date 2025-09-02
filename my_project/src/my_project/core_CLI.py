@@ -27,7 +27,8 @@ from .core import (
     print_audio_formats,
     print_video_formats,
     print_and_select_default_transcript,
-    print_transcript_preview
+    print_transcript_preview,
+    list_transcript_metadata
 )
 from .yt_downloads_utils import (
     download_audio,
@@ -35,6 +36,12 @@ from .yt_downloads_utils import (
     download_video_with_audio,
     download_transcript
 )
+
+# Import logging
+from .logger_utils.logger_utils import setup_logger
+
+# Setup logger for this module
+logger = setup_logger("core_CLI")
 
 
 def download_audio_with_fallback(url: str, audio_formats: list, save_path: str, max_format_attempts: int = 3) -> bool:
@@ -307,56 +314,97 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
                             print(f"   📄 {format_name}: {file_path}")
                     else:
                         print(f"✅ Transcript download completed successfully: {result}")
-                
-                    # 🆕 Handle metadata export if requested
-                    if args.metadata_export:
-                        try:
-                            from .metadata_exporter import export_metadata
-                            from .metadata_collector import collect_comprehensive_metadata
-                            from .utils.path_utils import load_config
-                            from pathlib import Path
-                            from youtube_transcript_api import YouTubeTranscriptApi
-                            
-                            config = load_config()
-                            if config.get("metadata_collection", {}).get("enabled", True):
-                                print(f"📊 Exporting metadata to {args.metadata_export} format...")
-                                
-                                # Fetch transcript data for metadata analysis (use same method as yt_downloads_utils)
-                                try:
-                                    transcript_data = YouTubeTranscriptApi.get_transcript(
-                                        info.get("id"), 
-                                        languages=[default_transcript.get("language_code")]
-                                    )
-                                except Exception as e:
-                                    print(f"⚠️ Could not fetch transcript for metadata analysis: {e}")
-                                    transcript_data = []  # Simple fallback for export
-                                
-                                # Collect comprehensive metadata
-                                comprehensive_metadata = collect_comprehensive_metadata(info, transcript_data, config)
-                                
-                                # Generate export path
-                                base_name = os.path.join(
-                                    str(transcripts_dir), 
-                                    f"{info.get('id')}_metadata"
-                                )
-                                export_path = export_metadata(
-                                    comprehensive_metadata, 
-                                    args.metadata_export, 
-                                    Path(base_name)
-                                )
-                                
-                                if export_path:
-                                    print(f"✅ Metadata exported successfully: {export_path}")
-                                else:
-                                    print(f"❌ Metadata export failed")
-                            else:
-                                print(f"⚠️ Metadata collection is disabled in configuration")
-                        except Exception as e:
-                            print(f"💥 Metadata export error: {str(e)}")
                 else:
                     print(f"❌ Transcript download failed")
             except Exception as e:
                 print(f"💥 Transcript download error: {str(e)}")
+        
+        # 🆕 Handle metadata export if requested (independent of transcript success)
+        if args.metadata_export:
+            try:
+                from .metadata_exporter import export_metadata
+                from .metadata_collector import collect_comprehensive_metadata
+                from .utils.path_utils import load_config
+                from pathlib import Path
+                from youtube_transcript_api import YouTubeTranscriptApi
+                
+                config = load_config()
+                if config.get("metadata_collection", {}).get("enabled", True):
+                    print(f"📊 Exporting metadata to {args.metadata_export} format...")
+                    
+                    # Robust transcript data fetching with multiple fallback strategies
+                    transcript_data = []
+                    video_id = info.get("id")
+                    
+                    if video_id:
+                        try:
+                            # Strategy 1: Use selected transcript language if available
+                            if default_transcript and default_transcript.get("language_code"):
+                                transcript_data = YouTubeTranscriptApi.get_transcript(
+                                    video_id, 
+                                    languages=[default_transcript.get("language_code")]
+                                )
+                                print(f"✅ Fetched transcript in {default_transcript.get('language')} for metadata analysis")
+                        except Exception as e:
+                            logger.debug(f"Failed to fetch selected transcript language: {e}")
+                            
+                            try:
+                                # Strategy 2: Try to get any available transcript
+                                transcript_list = YouTubeTranscriptApi.list(video_id)
+                                if transcript_list:
+                                    # Prefer manual transcripts over auto-generated
+                                    manual_transcripts = [t for t in transcript_list if not t.is_generated]
+                                    auto_transcripts = [t for t in transcript_list if t.is_generated]
+                                    
+                                    # Try manual transcripts first
+                                    target_transcript = None
+                                    if manual_transcripts:
+                                        target_transcript = manual_transcripts[0]
+                                        print(f"✅ Using manual transcript in {target_transcript.language} for metadata analysis")
+                                    elif auto_transcripts:
+                                        target_transcript = auto_transcripts[0]
+                                        print(f"✅ Using auto-generated transcript in {target_transcript.language} for metadata analysis")
+                                    
+                                    if target_transcript:
+                                        transcript_data = target_transcript.fetch()
+                                        
+                            except Exception as e2:
+                                logger.debug(f"Failed to fetch any transcript: {e2}")
+                                print(f"⚠️ No transcript available for metadata analysis - proceeding with video-only metadata")
+                    
+                    # Collect comprehensive metadata (works even without transcript)
+                    comprehensive_metadata = collect_comprehensive_metadata(info, transcript_data, config)
+                    
+                    # Generate robust export path (independent of transcript downloads)
+                    if args.transcript and 'transcripts_dir' in locals():
+                        # Use transcript directory if available
+                        export_base_dir = str(transcripts_dir)
+                    else:
+                        # Create independent metadata export directory
+                        metadata_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "metadata")
+                        export_base_dir = str(metadata_dir)
+                    
+                    base_name = os.path.join(
+                        export_base_dir, 
+                        f"{info.get('id', 'unknown')}_metadata"
+                    )
+                    
+                    export_path = export_metadata(
+                        comprehensive_metadata, 
+                        args.metadata_export, 
+                        Path(base_name)
+                    )
+                    
+                    if export_path:
+                        print(f"✅ Metadata exported successfully: {export_path}")
+                        success_count += 1  # Count successful metadata export
+                    else:
+                        print(f"❌ Metadata export failed")
+                else:
+                    print(f"⚠️ Metadata collection is disabled in configuration")
+            except Exception as e:
+                print(f"💥 Metadata export error: {str(e)}")
+                logger.error(f"Metadata export failed for {url}: {e}")
         
         results["success_count"] = success_count
         print(f"\n📊 Video Summary: {success_count}/{total_requested} successful")

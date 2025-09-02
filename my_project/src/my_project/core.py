@@ -108,6 +108,33 @@ def get_format_score(fmt: dict, preferred_formats: List[str]) -> int:
     return 10
 
 
+def get_best_filesize(fmt: Dict) -> float:
+    """Get the best available filesize with fallback to filesize_approx."""
+    # Try exact filesize first, then approximate, then infinity as fallback
+    filesize = fmt.get('filesize')
+    if filesize is not None and filesize > 0:
+        return float(filesize)
+    
+    filesize_approx = fmt.get('filesize_approx')
+    if filesize_approx is not None and filesize_approx > 0:
+        return float(filesize_approx)
+    
+    return float('inf')
+
+
+def format_filesize_display(fmt: Dict) -> str:
+    """Format filesize for display with graceful fallback."""
+    filesize = fmt.get('filesize')
+    filesize_approx = fmt.get('filesize_approx')
+    
+    if filesize is not None and filesize > 0:
+        return f"{filesize / 1024 / 1024:.2f} MB"
+    elif filesize_approx is not None and filesize_approx > 0:
+        return f"~{filesize_approx / 1024 / 1024:.2f} MB"
+    else:
+        return "Unknown size"
+
+
 def smart_audio_selection(audio_formats: List[Dict], preferences: Dict) -> Optional[Dict]:
     """Smart audio format selection with fallback logic."""
     preferred_quality = preferences.get('preferred_quality', 'medium')
@@ -121,7 +148,7 @@ def smart_audio_selection(audio_formats: List[Dict], preferences: Dict) -> Optio
     for fmt in audio_formats:
         quality_score = get_quality_score(fmt, preferred_quality, is_audio=True)
         format_score = get_format_score(fmt, preferred_formats)
-        file_size = fmt.get('filesize') or float('inf')
+        file_size = get_best_filesize(fmt)
         
         # Prefer smaller file sizes (inverse scoring)
         size_score = 100 if file_size == float('inf') else max(0, 100 - (file_size / 1024 / 1024))
@@ -164,7 +191,7 @@ def smart_video_selection(video_formats: List[Dict], preferences: Dict) -> Optio
     for fmt in video_formats:
         quality_score = get_quality_score(fmt, preferred_quality, is_audio=False)
         format_score = get_format_score(fmt, preferred_formats)
-        file_size = fmt.get('filesize') or float('inf')
+        file_size = get_best_filesize(fmt)
         
         # Prefer smaller file sizes (inverse scoring)
         size_score = 100 if file_size == float('inf') else max(0, 100 - (file_size / 1024 / 1024 / 10))
@@ -221,7 +248,7 @@ def select_default_audio(formats: List[Dict[str, Any]], preferences: Optional[Di
     selected = smart_audio_selection(audio_formats, preferences)
     
     if selected:
-        logger.info(f"Selected audio format: {selected.get('format_id')} - {selected.get('format_note')} | {selected.get('ext')} | {selected.get('filesize', 0) / 1024 / 1024:.2f} MB")
+        logger.info(f"Selected audio format: {selected.get('format_id')} - {selected.get('format_note')} | {selected.get('ext')} | {format_filesize_display(selected)}")
     else:
         logger.warning("No suitable audio format found")
     
@@ -255,7 +282,7 @@ def select_default_video(formats: List[Dict[str, Any]], preferences: Optional[Di
     selected = smart_video_selection(video_formats, preferences)
     
     if selected:
-        logger.info(f"Selected video format: {selected.get('format_id')} - {selected.get('format_note')} | {selected.get('ext')} | {selected.get('height')}p | {selected.get('filesize', 0) / 1024 / 1024:.2f} MB")
+        logger.info(f"Selected video format: {selected.get('format_id')} - {selected.get('format_note')} | {selected.get('ext')} | {selected.get('height')}p | {format_filesize_display(selected)}")
     else:
         logger.warning("No suitable video format found")
     
@@ -291,7 +318,7 @@ def select_combined_video_audio(formats: List[Dict[str, Any]], preferences: Opti
     selected = smart_video_selection(combined_formats, preferences)
     
     if selected:
-        logger.info(f"Selected combined format: {selected.get('format_id')} - {selected.get('format_note')} | {selected.get('ext')} | {selected.get('height')}p | {selected.get('filesize', 0) / 1024 / 1024:.2f} MB")
+        logger.info(f"Selected combined format: {selected.get('format_id')} - {selected.get('format_note')} | {selected.get('ext')} | {selected.get('height')}p | {format_filesize_display(selected)}")
     else:
         logger.warning("No suitable combined format found")
     
@@ -627,7 +654,7 @@ def print_audio_formats(audio_formats: List[Dict[str, Any]], default_audio: Opti
             f"[{f.get('format_id')}] {f.get('ext')} | "
             f"{f.get('format_note', '')} | {f.get('acodec')} | "
             f"{f.get('language', '')} | "
-            f"{f.get('filesize', 0) / 1024 / 1024:.2f} MB {tag}"
+            f"{format_filesize_display(f)} {tag}"
         )
 
 
@@ -640,7 +667,7 @@ def print_video_formats(video_formats: List[Dict[str, Any]], default_video: Opti
             f"[{f.get('format_id')}] {f.get('ext')} | "
             f"{f.get('format_note', '')} | {f.get('vcodec')} | "
             f"{f.get('height', '')}p | "
-            f"{f.get('filesize', 0) / 1024 / 1024:.2f} MB {tag}"
+            f"{format_filesize_display(f)} {tag}"
         )
 
 
