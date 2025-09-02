@@ -14,7 +14,10 @@ python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" 
 # Download audio only
 python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --audio
 
-# Download video only
+# Download video with audio included (recommended)
+python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-with-audio
+
+# Download video only (silent - no audio)
 python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video
 
 # Get info without downloading
@@ -52,10 +55,24 @@ python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" 
   python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --audio
   ```
 
-#### `--video`
-- **Description**: Download video only
+#### `--video-with-audio` ⭐ **RECOMMENDED**
+- **Description**: Download video with audio included (complete video file)
 - **Default Quality**: 720p
 - **Preferred Format**: MP4
+- **Smart Format Selection**: Uses yt-dlp's intelligent format merging
+- **Example**:
+  ```bash
+  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-with-audio
+  
+  # With quality control
+  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-with-audio --quality 1080p
+  ```
+
+#### `--video`
+- **Description**: Download video only (⚠️ **SILENT VIDEO - NO AUDIO**)
+- **Default Quality**: 720p
+- **Preferred Format**: MP4
+- **Use Case**: Specialized workflows requiring video-only streams
 - **Example**:
   ```bash
   python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video
@@ -133,12 +150,17 @@ python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" 
 ### Quality & Language Settings
 
 #### `--quality`
-- **Description**: Preferred video quality
+- **Description**: Preferred video quality (works with `--video` and `--video-with-audio`)
 - **Common Values**: `144p`, `240p`, `360p`, `480p`, `720p`, `1080p`
 - **Default**: `720p` (from config)
-- **Example**:
+- **Smart Fallback**: Automatically tries alternative qualities if preferred isn't available
+- **Examples**:
   ```bash
-  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video --quality 1080p
+  # Video with audio at 1080p
+  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video-with-audio --quality 1080p
+  
+  # Video only at 480p
+  python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --video --quality 480p
   ```
 
 #### `--lang`
@@ -375,9 +397,11 @@ downloads/
 ├── {session_uuid}/
 │   └── {video_uuid}/
 │       ├── audio/
-│       │   └── video_title.mp3
+│       │   └── video_title.mp3              # Audio only (MP3)
 │       ├── video/
-│       │   └── video_title.mp4
+│       │   └── video_title.mp4              # ⚠️ Silent video (no audio)
+│       ├── video_with_audio/
+│       │   └── video_title.mp4              # ⭐ Complete video with audio
 │       └── transcripts/
 │           ├── video_id_lang_clean.txt      # LLM-optimized text
 │           ├── video_id_lang_timestamped.txt # Original format
@@ -392,9 +416,11 @@ downloads/
 - **Quality**: Based on config preferences
 
 #### Video Files
-- **Format**: `{video_title}.{ext}` (usually `.mp4`)
-- **Quality**: Based on smart selection algorithm
+- **Video with Audio** (`video_with_audio/`): `{video_title}.mp4` - ⭐ **Complete video files with audio**
+- **Video Only** (`video/`): `{video_title}.mp4` - ⚠️ **Silent video files (no audio)**
+- **Quality**: Based on smart selection algorithm with CLI override support
 - **Fallback**: Multiple quality attempts if preferred fails
+- **Format Selection**: Intelligent merging for video+audio, video-only streams for `--video`
 
 #### 🆕 Enhanced Transcript Files
 - **Clean**: `{video_id}_{language}_clean.txt` - Perfect for LLM input
@@ -515,11 +541,36 @@ python -m src.my_project.core_CLI "https://www.youtube.com/playlist?list=PLxxx" 
 
 ### Archive Everything
 ```bash
-# Download audio, video, and all transcript formats
-python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --audio --video --transcript --transcript-formats all
+# Download audio, video with audio, and all transcript formats
+python -m src.my_project.core_CLI "https://www.youtube.com/watch?v=KYT3NiqI-X8" --audio --video-with-audio --transcript --transcript-formats all
 ```
 
 ## 🔍 Understanding Output
+
+### Video Download Modes
+
+#### `--video-with-audio` (⭐ **RECOMMENDED**)
+- **What you get**: Complete video file with audio included
+- **Use cases**: General video downloads, content archiving, media consumption
+- **Technical**: Uses yt-dlp's intelligent format selection with merging
+- **File location**: `video_with_audio/` subfolder
+- **Quality control**: Full support for `--quality` parameter
+
+#### `--video` (⚠️ **SILENT VIDEO**)
+- **What you get**: Video-only stream without audio
+- **Use cases**: Video analysis, silent video overlays, specialized workflows
+- **Technical**: Selects video-only formats (vcodec != 'none', acodec == 'none')
+- **File location**: `video/` subfolder
+- **Note**: Results in silent video files - this is intentional behavior
+
+#### Combined Downloads
+```bash
+# Download both audio and video+audio separately
+python -m src.my_project.core_CLI "URL" --audio --video-with-audio
+
+# Download audio, silent video, and video+audio (all formats)
+python -m src.my_project.core_CLI "URL" --audio --video --video-with-audio
+```
 
 ### Session Management
 Each run generates a unique session UUID that organizes all downloads from that session. This helps track related downloads and prevents conflicts.

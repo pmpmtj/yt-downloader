@@ -22,6 +22,7 @@ from .core import (
     get_video_info,
     select_default_audio,
     select_default_video,
+    select_combined_video_audio,
     print_basic_info,
     print_audio_formats,
     print_video_formats,
@@ -31,6 +32,7 @@ from .core import (
 from .yt_downloads_utils import (
     download_audio,
     download_video,
+    download_video_with_audio,
     download_transcript
 )
 
@@ -125,7 +127,8 @@ def parse_args(args=None):
     parser.add_argument("--lang", type=str, default=None, help="Preferred transcript/audio language (e.g. en, pt-BR)")
     parser.add_argument("--quality", type=str, default=None, help="Preferred video quality (e.g. 720p, 1080p)")
     parser.add_argument("--audio", action="store_true", help="Download audio only")
-    parser.add_argument("--video", action="store_true", help="Download video only")
+    parser.add_argument("--video", action="store_true", help="Download video only (silent - no audio)")
+    parser.add_argument("--video-with-audio", action="store_true", help="Download video with audio included")
     parser.add_argument("--transcript", action="store_true", help="Download transcript only (if available)")
     parser.add_argument("--transcript-formats", type=str, nargs="+", 
                         choices=["clean", "timestamped", "structured", "all"],
@@ -162,9 +165,10 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
         video_uuid = generate_video_uuid()
         print(f"Video UUID: {video_uuid}")
 
-        # Step 3: Select defaults
-        default_audio, audio_list = select_default_audio(formats)
-        default_video, video_list = select_default_video(formats)
+        # Step 3: Select defaults with quality override from CLI
+        default_audio, audio_list = select_default_audio(formats, quality_override=args.quality)
+        default_video, video_list = select_default_video(formats, quality_override=args.quality)
+        default_combined, combined_list = select_combined_video_audio(formats, quality_override=args.quality) if args.video_with_audio else (None, [])
         default_transcript = print_and_select_default_transcript(info.get("id"))
         
         # Show transcript preview if requested
@@ -172,23 +176,32 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
             print_transcript_preview(info.get("id"), default_transcript.get("language_code"))
 
         # Step 4: Print info if requested
-        if args.info_only or not (args.audio or args.video or args.transcript):
+        if args.info_only or not (args.audio or args.video or args.video_with_audio or args.transcript):
             print_audio_formats(audio_list, default_audio)
             print_video_formats(video_list, default_video)
+            if combined_list:
+                print_video_formats(combined_list, default_combined)  # Combined formats display as video formats
             print("\n=== Defaults Selected ===")
             if default_audio:
                 print(f"Default audio: [{default_audio.get('format_id')}] {default_audio.get('ext')} | {default_audio.get('format_note')}")
             if default_video:
                 print(f"Default video: [{default_video.get('format_id')}] {default_video.get('ext')} | {default_video.get('format_note')}")
+            if default_combined:
+                print(f"Default video+audio: [{default_combined.get('format_id')}] {default_combined.get('ext')} | {default_combined.get('format_note')} | {default_combined.get('height')}p")
             if default_transcript:
                 print(f"Default transcript language: {default_transcript.get('language')}")
             
-            print(f"\nWould download to structure: {base_downloads_dir}/{session_uuid}/{video_uuid}/[audio|video|transcripts]/")
+            print(f"\nWould download to structure: {base_downloads_dir}/{session_uuid}/{video_uuid}/[audio|video|video_with_audio|transcripts]/")
             return {"status": "info_only", "video_id": info.get("id"), "title": info.get("title")}
 
         # Step 5: Downloads with error handling
         success_count = 0
-        total_requested = sum([bool(args.audio and default_audio), bool(args.video and default_video), bool(args.transcript and default_transcript)])
+        total_requested = sum([
+            bool(args.audio and default_audio), 
+            bool(args.video and default_video), 
+            bool(args.video_with_audio and default_combined),
+            bool(args.transcript and default_transcript)
+        ])
         
         results = {"status": "processed", "video_id": info.get("id"), "title": info.get("title"), "success_count": 0, "total_requested": total_requested}
         
@@ -219,6 +232,22 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
                     print(f"❌ Video download failed after all fallback attempts")
             except Exception as e:
                 print(f"💥 Video download error: {str(e)}")
+
+        if args.video_with_audio and default_combined:
+            try:
+                video_audio_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "video_with_audio")
+                filename = os.path.join(str(video_audio_dir), f"%(title)s.%(ext)s")
+                print(f"\nDownloading video+audio to: {video_audio_dir}/%(title)s.%(ext)s")
+                
+                # Use the intelligent video+audio downloader with quality preference
+                quality_pref = args.quality or "720p"
+                if download_video_with_audio(url, quality_pref, filename):
+                    success_count += 1
+                    print(f"✅ Video+audio download completed successfully")
+                else:
+                    print(f"❌ Video+audio download failed after all attempts")
+            except Exception as e:
+                print(f"💥 Video+audio download error: {str(e)}")
 
         if args.transcript and default_transcript:
             try:

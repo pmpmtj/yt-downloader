@@ -89,6 +89,56 @@ def download_video(url: str, format_id: str, save_path: Optional[str] = None, ma
     return False
 
 
+def download_video_with_audio(url: str, quality_preference: str = "720p", save_path: Optional[str] = None, max_retries: int = 3, retry_delay: int = 2):
+    """Download video with audio using intelligent format selection."""
+    outtmpl = save_path or '%(title)s.%(ext)s'
+    logger.info(f"Starting video+audio download: quality={quality_preference}, save_path={save_path}")
+    
+    # Create intelligent format selector based on quality preference
+    max_height = "1080" if quality_preference == "1080p" else "720" if quality_preference == "720p" else "480" if quality_preference == "480p" else "720"
+    
+    # Try combined formats first, then merge separate streams as fallback
+    format_selectors = [
+        f'best[height<={max_height}][ext=mp4]',  # Best combined format with height limit
+        f'bestvideo[height<={max_height}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={max_height}]+bestaudio',  # Merge separate streams
+        f'best[height<={max_height}]',  # Any best format with height limit
+        'best',  # Ultimate fallback
+    ]
+    
+    opts = {
+        'quiet': False,
+        'outtmpl': outtmpl,
+        'retries': max_retries,
+        'merge_output_format': 'mp4',  # Ensure final output is mp4
+    }
+    
+    for format_selector in format_selectors:
+        opts['format'] = format_selector
+        logger.debug(f"Trying format selector: {format_selector}")
+        
+        for attempt in range(max_retries + 1):
+            try:
+                logger.debug(f"Video+audio download attempt {attempt + 1}/{max_retries + 1} with format: {format_selector}")
+                with YoutubeDL(opts) as ydl:
+                    ydl.download([url])
+                logger.info(f"✅ Video+audio download successful with format: {format_selector}")
+                return True
+                
+            except Exception as e:
+                logger.warning(f"❌ Format {format_selector} attempt {attempt + 1} failed: {str(e)}")
+                
+                if attempt < max_retries:
+                    logger.info(f"⏳ Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.warning(f"💥 Format {format_selector} failed after {max_retries + 1} attempts")
+                    break  # Try next format selector
+    
+    logger.error("💥 All video+audio format selectors failed")
+    return False
+
+
 def download_transcript(video_id: str, language_code: str, save_path: Optional[str] = None, 
                       max_retries: int = 3, retry_delay: int = 2, formats: Optional[List[str]] = None,
                       video_metadata: Optional[Dict[str, Any]] = None):

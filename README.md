@@ -5,7 +5,8 @@ A sophisticated command-line tool for downloading YouTube content with advanced 
 ## ✨ Features
 
 ### Core Functionality
-- **Multi-format Support**: Download audio (MP3), video (MP4), and enhanced transcripts
+- **Multi-format Support**: Download audio (MP3), video with audio (MP4), and enhanced transcripts
+- **Smart Video Downloads**: Intelligent video+audio merging with quality control
 - **Smart Format Selection**: Intelligent scoring system with fallback mechanisms
 - **Advanced Transcript Processing**: Text cleaning, chapter detection, multiple output formats
 - **Rich Metadata Collection**: Content analysis, quality assessment, and comprehensive video metadata
@@ -55,6 +56,12 @@ pytest-cov>=4.1.0         # Coverage reporting
 # Download video info only (no download)
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8
 
+# Download video with audio (recommended)
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --video-with-audio
+
+# Download video with audio at specific quality
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --video-with-audio --quality 1080p
+
 # Download audio with enhanced transcript processing
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --audio --transcript
 
@@ -75,7 +82,8 @@ python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --transcript --
 
 #### Core Download Options
 - `--audio` - Download audio (MP3 format)
-- `--video` - Download video (original format)
+- `--video-with-audio` - Download video with audio included ⭐ **RECOMMENDED**
+- `--video` - Download video only (⚠️ silent - no audio)
 - `--transcript` - Download enhanced transcripts
 - `--info-only` - Display comprehensive info without downloading
 
@@ -110,7 +118,7 @@ python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --preview-trans
 #### Enhanced Downloads
 ```bash
 # High-quality download with all transcript formats
-python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --audio --video --transcript --transcript-formats clean timestamped structured --quality 720p
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --audio --video-with-audio --transcript --transcript-formats clean timestamped structured --quality 720p
 
 # LLM analysis workflow
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --transcript --transcript-formats clean structured --metadata-analysis --metadata-export json --outdir ./llm_content
@@ -135,7 +143,9 @@ output_directory/
 ├── audio/
 │   └── video_title.mp3                    # High-quality audio (192kbps)
 ├── video/  
-│   └── video_title.mp4                    # Original quality video
+│   └── video_title.mp4                    # ⚠️ Silent video (no audio)
+├── video_with_audio/
+│   └── video_title.mp4                    # ⭐ Complete video with audio
 ├── transcripts/
 │   ├── video_id_en_clean.txt             # Cleaned text for LLM processing
 │   ├── video_id_en_timestamped.txt       # Timestamped for reference
@@ -145,6 +155,23 @@ output_directory/
     ├── video_id_analysis.csv             # Content analysis summary
     └── video_id_report.md                # Human-readable report
 ```
+
+### Video Download Options
+
+#### `--video-with-audio` ⭐ **RECOMMENDED**
+- **Purpose**: Complete video files with audio included
+- **Technical**: Uses yt-dlp's intelligent format selection and merging
+- **Quality**: Full support for `--quality` parameter (720p, 1080p, etc.)
+- **Use Cases**: General downloads, content archiving, media consumption
+- **Output**: `video_with_audio/` directory
+
+#### `--video` ⚠️ **SILENT VIDEO**
+- **Purpose**: Video-only streams without audio
+- **Technical**: Selects video-only formats (vcodec != 'none', acodec == 'none')
+- **Quality**: Supports `--quality` parameter
+- **Use Cases**: Video analysis, silent overlays, specialized workflows
+- **Output**: `video/` directory
+- **Note**: Results in silent video files - this is intentional behavior
 
 ### Transcript Format Options
 
@@ -279,7 +306,7 @@ python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --info-only
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --preview-transcript --metadata-analysis
 
 # Test complete workflow
-python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --audio --transcript --metadata-export json --outdir ./test_output
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --video-with-audio --transcript --metadata-export json --outdir ./test_output
 ```
 
 ## 🚀 Development Status

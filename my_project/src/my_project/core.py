@@ -45,7 +45,16 @@ def is_audio_format(fmt: dict) -> bool:
     return fmt.get('vcodec') == 'none' and fmt.get('acodec') != 'none'
 
 def is_video_format(fmt: dict) -> bool:
+    """Legacy video-only format filter (results in silent video)."""
     return fmt.get('vcodec') != 'none' and fmt.get('acodec') == 'none'
+
+def is_combined_format(fmt: dict) -> bool:
+    """Combined video+audio format filter."""
+    return fmt.get('vcodec') != 'none' and fmt.get('acodec') != 'none'
+
+def is_any_video_format(fmt: dict) -> bool:
+    """Any format with video (includes both video-only and combined)."""
+    return fmt.get('vcodec') != 'none'
 
 def is_default_format(fmt: dict) -> bool:
     note = (fmt.get('format_note') or '').lower()
@@ -185,7 +194,7 @@ def smart_video_selection(video_formats: List[Dict], preferences: Dict) -> Optio
     return video_formats[0] if video_formats else None
 
 
-def select_default_audio(formats: List[Dict[str, Any]], preferences: Optional[Dict] = None) -> Tuple[Optional[Dict], List[Dict]]:
+def select_default_audio(formats: List[Dict[str, Any]], preferences: Optional[Dict] = None, quality_override: Optional[str] = None) -> Tuple[Optional[Dict], List[Dict]]:
     audio_formats = [f for f in formats if is_audio_format(f)]
     logger.debug(f"Found {len(audio_formats)} audio formats")
     
@@ -202,6 +211,12 @@ def select_default_audio(formats: List[Dict[str, Any]], preferences: Optional[Di
             logger.warning(f"Could not load audio preferences: {e}")
             preferences = {}
     
+    # Override quality preference if provided via CLI
+    if quality_override:
+        preferences = preferences.copy()  # Don't modify original
+        preferences['preferred_quality'] = quality_override
+        logger.debug(f"Quality overridden by CLI: {quality_override}")
+    
     # Apply smart selection with fallback
     selected = smart_audio_selection(audio_formats, preferences)
     
@@ -213,7 +228,7 @@ def select_default_audio(formats: List[Dict[str, Any]], preferences: Optional[Di
     return selected, audio_formats
 
 
-def select_default_video(formats: List[Dict[str, Any]], preferences: Optional[Dict] = None) -> Tuple[Optional[Dict], List[Dict]]:
+def select_default_video(formats: List[Dict[str, Any]], preferences: Optional[Dict] = None, quality_override: Optional[str] = None) -> Tuple[Optional[Dict], List[Dict]]:
     video_formats = [f for f in formats if is_video_format(f)]
     logger.debug(f"Found {len(video_formats)} video formats")
     
@@ -230,6 +245,12 @@ def select_default_video(formats: List[Dict[str, Any]], preferences: Optional[Di
             logger.warning(f"Could not load video preferences: {e}")
             preferences = {}
     
+    # Override quality preference if provided via CLI
+    if quality_override:
+        preferences = preferences.copy()  # Don't modify original
+        preferences['preferred_quality'] = quality_override
+        logger.debug(f"Video quality overridden by CLI: {quality_override}")
+    
     # Apply smart selection with fallback
     selected = smart_video_selection(video_formats, preferences)
     
@@ -239,6 +260,42 @@ def select_default_video(formats: List[Dict[str, Any]], preferences: Optional[Di
         logger.warning("No suitable video format found")
     
     return selected, video_formats
+
+
+def select_combined_video_audio(formats: List[Dict[str, Any]], preferences: Optional[Dict] = None, quality_override: Optional[str] = None) -> Tuple[Optional[Dict], List[Dict]]:
+    """Select best combined video+audio format."""
+    combined_formats = [f for f in formats if is_combined_format(f)]
+    logger.debug(f"Found {len(combined_formats)} combined video+audio formats")
+    
+    if not combined_formats:
+        logger.warning("No combined video+audio formats available")
+        return None, []
+    
+    # Load preferences from config if not provided
+    if preferences is None:
+        try:
+            from .utils.path_utils import load_config
+            config = load_config()
+            preferences = config.get("quality_preferences", {}).get("video", {})
+        except Exception as e:
+            logger.warning(f"Could not load video preferences: {e}")
+            preferences = {}
+    
+    # Override quality preference if provided via CLI
+    if quality_override:
+        preferences = preferences.copy()  # Don't modify original
+        preferences['preferred_quality'] = quality_override
+        logger.debug(f"Combined format quality overridden by CLI: {quality_override}")
+    
+    # Apply smart selection with fallback
+    selected = smart_video_selection(combined_formats, preferences)
+    
+    if selected:
+        logger.info(f"Selected combined format: {selected.get('format_id')} - {selected.get('format_note')} | {selected.get('ext')} | {selected.get('height')}p | {selected.get('filesize', 0) / 1024 / 1024:.2f} MB")
+    else:
+        logger.warning("No suitable combined format found")
+    
+    return selected, combined_formats
 
 
 # -------------------- Transcript Metadata --------------------
