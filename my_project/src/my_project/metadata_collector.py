@@ -48,9 +48,19 @@ class MetadataCollector:
         
         logger.debug(f"MetadataCollector initialized with config: {self.config}")
     
-    def extract_video_metadata(self, video_info: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract comprehensive video metadata."""
+    def extract_video_metadata(self, video_info: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Extract comprehensive video metadata with defensive None handling."""
         logger.debug("Extracting video metadata")
+        
+        if video_info is None:
+            logger.warning("video_info is None - returning empty metadata structure")
+            return {
+                'basic_info': {},
+                'technical_details': {},
+                'engagement_metrics': {},
+                'channel_info': {},
+                'content_details': {}
+            }
         
         metadata = {
             'basic_info': self._extract_basic_info(video_info),
@@ -467,9 +477,24 @@ class MetadataCollector:
         else:
             return "Very Difficult"
     
-    def generate_content_summary(self, video_info: Dict[str, Any], transcript_analysis: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate comprehensive content summary."""
+    def generate_content_summary(self, video_info: Optional[Dict[str, Any]], transcript_analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate comprehensive content summary with defensive None handling."""
         logger.debug("Generating content summary")
+        
+        if video_info is None:
+            logger.warning("video_info is None - returning minimal content summary")
+            return {
+                'overview': {
+                    'title': 'Unknown',
+                    'duration': 'Unknown',
+                    'uploader': 'Unknown', 
+                    'upload_date': 'Unknown',
+                    'view_count': 0
+                },
+                'content_insights': {},
+                'quality_indicators': {},
+                'llm_suitability': {'overall_score': 0, 'recommended_for_llm': False}
+            }
         
         # Extract key information
         video_metadata = self.extract_video_metadata(video_info)
@@ -478,7 +503,7 @@ class MetadataCollector:
         summary = {
             'overview': {
                 'title': video_info.get('title', ''),
-                'duration': video_metadata['basic_info']['duration_readable'],
+                'duration': video_metadata['basic_info'].get('duration_readable', 'Unknown'),
                 'uploader': video_info.get('uploader', ''),
                 'upload_date': video_info.get('upload_date', ''),
                 'view_count': video_metadata.get('engagement_metrics', {}).get('view_count', 0)
@@ -568,13 +593,13 @@ class MetadataCollector:
         return notes
 
 
-def collect_comprehensive_metadata(video_info: Dict[str, Any], transcript_entries: List[Dict] = None, 
+def collect_comprehensive_metadata(video_info: Optional[Dict[str, Any]], transcript_entries: List[Dict] = None, 
                                  config: Dict[str, Any] = None) -> Dict[str, Any]:
     """
     Collect comprehensive metadata for video and transcript.
     
     Args:
-        video_info: Video information from yt-dlp
+        video_info: Video information from yt-dlp (can be None on extraction failure)
         transcript_entries: Transcript entries if available
         config: Configuration dictionary
     
@@ -582,6 +607,20 @@ def collect_comprehensive_metadata(video_info: Dict[str, Any], transcript_entrie
         Dictionary with comprehensive metadata
     """
     logger.info("Starting comprehensive metadata collection")
+    
+    if video_info is None:
+        logger.warning("video_info is None - returning minimal metadata structure")
+        return {
+            'collection_info': {
+                'collected_at': datetime.now().isoformat(),
+                'collector_version': '1.0',
+                'analysis_enabled': False,
+                'error': 'Video information unavailable'
+            },
+            'video_metadata': {},
+            'transcript_analysis': {},
+            'content_summary': {}
+        }
     
     collector = MetadataCollector(config)
     

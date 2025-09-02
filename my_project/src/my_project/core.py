@@ -598,15 +598,24 @@ def print_transcript_preview(video_id: str, language_code: str = None):
 
 # -------------------- Display Helpers --------------------
 
-def print_basic_info(info: dict):
+def print_basic_info(info: Optional[Dict]):
+    """Print basic video information with defensive None handling."""
+    if info is None:
+        print("\n❌ No video information available")
+        return
+        
     print("\nVideo Metadata")
     print("-" * 40)
-    print(f"Title       : {info.get('title')}")
-    print(f"Uploader    : {info.get('uploader')}")
-    print(f"Duration    : {info.get('duration')} seconds")
-    print(f"View Count  : {info.get('view_count')}")
-    print(f"Upload Date : {info.get('upload_date')}")
-    print(f"Description : {info.get('description')[:300]}...\n")
+    print(f"Title       : {info.get('title', 'Unknown')}")
+    print(f"Uploader    : {info.get('uploader', 'Unknown')}")
+    print(f"Duration    : {info.get('duration', 0)} seconds")
+    print(f"View Count  : {info.get('view_count', 'Unknown')}")
+    print(f"Upload Date : {info.get('upload_date', 'Unknown')}")
+    description = info.get('description', '')
+    if description:
+        print(f"Description : {description[:300]}...\n")
+    else:
+        print(f"Description : No description available\n")
 
 
 def print_audio_formats(audio_formats: List[Dict[str, Any]], default_audio: Optional[Dict]):
@@ -647,6 +656,10 @@ def main():
     try:
         info = get_video_info(url)
         print_basic_info(info)
+
+        if info is None:
+            print("❌ Cannot proceed without video information. Please check the URL and try again.")
+            sys.exit(1)
 
         formats = info.get('formats', [])
 

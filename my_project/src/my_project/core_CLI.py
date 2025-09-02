@@ -158,6 +158,10 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
         
         # Step 1: Fetch video info
         info = get_video_info(url)
+        if info is None:
+            print("❌ Failed to extract video information. Video may be private, deleted, or URL is invalid.")
+            return {"status": "error", "error": "Failed to extract video info", "video_id": None, "title": None}
+        
         print_basic_info(info)
         formats = info.get("formats", [])
 
