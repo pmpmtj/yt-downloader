@@ -368,8 +368,21 @@ def list_transcript_metadata(video_id: str) -> List[Dict[str, Any]]:
     return meta
 
 
-def print_and_select_default_transcript(video_id: str) -> Optional[Dict[str, Any]]:
-    logger.debug(f"Starting transcript discovery for video_id: {video_id}")
+def print_and_select_default_transcript(video_id: str, preferred_language: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    logger.debug(f"Starting transcript discovery for video_id: {video_id}, preferred_language: {preferred_language}")
+    
+    # If no preferred language provided, check config for default preference
+    if not preferred_language:
+        try:
+            from .utils.path_utils import load_config
+            config = load_config()
+            config_languages = config.get("transcripts", {}).get("preferred_languages", [])
+            if config_languages:
+                preferred_language = config_languages[0]  # Use first preferred language from config
+                logger.debug(f"Using preferred language from config: {preferred_language}")
+        except Exception as e:
+            logger.debug(f"Could not load config for language preference: {e}")
+    
     print("\nTranscript Info")
     print("-" * 40)
     try:
@@ -407,21 +420,31 @@ def print_and_select_default_transcript(video_id: str) -> Optional[Dict[str, Any
                 default_transcript = r
                 logger.debug(f"Found explicit default transcript: {r}")
 
-        # New improved selection logic
+        # Enhanced selection logic with language preference priority
         if not default_transcript:
-            logger.debug("No explicit default found, applying fallback logic")
+            logger.debug("No explicit default found, applying enhanced fallback logic")
+            all_transcripts = manual_transcripts + auto_generated_transcripts
             
-            # Prefer manual transcripts over auto-generated
-            if manual_transcripts:
+            # Priority 1: Check for preferred language (from CLI --lang or config)
+            if preferred_language:
+                preferred_transcript = next((t for t in all_transcripts if t['language_code'] == preferred_language), None)
+                if preferred_transcript:
+                    default_transcript = preferred_transcript
+                    logger.info(f"Selected preferred language transcript: {preferred_transcript['language']} ({preferred_transcript['language_code']})")
+            
+            # Priority 2: Prefer manual transcripts over auto-generated (if no preferred language match)
+            if not default_transcript and manual_transcripts:
                 default_transcript = manual_transcripts[0]
                 logger.debug(f"Selected first manual transcript as default: {default_transcript}")
-            elif auto_generated_transcripts:
-                # Look for English auto-generated first
+            
+            # Priority 3: Look for English auto-generated
+            elif not default_transcript and auto_generated_transcripts:
                 english_auto = next((t for t in auto_generated_transcripts if t['language_code'] in ['en', 'en-US', 'en-GB']), None)
                 if english_auto:
                     default_transcript = english_auto
                     logger.debug(f"Selected English auto-generated transcript as default: {default_transcript}")
                 else:
+                    # Priority 4: Fallback to first available auto-generated
                     default_transcript = auto_generated_transcripts[0]
                     logger.debug(f"Selected first auto-generated transcript as default: {default_transcript}")
 
@@ -462,7 +485,7 @@ def preview_transcript(video_id: str, language_code: str = None, include_metadat
         
         # If no language specified, find the default
         if language_code is None:
-            default_transcript = print_and_select_default_transcript(video_id)
+            default_transcript = print_and_select_default_transcript(video_id, preferred_language=None)
             if not default_transcript:
                 return None
             language_code = default_transcript.get('language_code')
@@ -692,7 +715,7 @@ def main():
 
         default_audio, audio_list = select_default_audio(formats)
         default_video, video_list = select_default_video(formats)
-        default_transcript = print_and_select_default_transcript(info.get("id"))
+        default_transcript = print_and_select_default_transcript(info.get("id"), preferred_language=None)
 
         print_audio_formats(audio_list, default_audio)
         print_video_formats(video_list, default_video)

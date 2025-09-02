@@ -181,7 +181,7 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
         default_audio, audio_list = select_default_audio(formats, quality_override=args.quality)
         default_video, video_list = select_default_video(formats, quality_override=args.quality)
         default_combined, combined_list = select_combined_video_audio(formats, quality_override=args.quality) if args.video_with_audio else (None, [])
-        default_transcript = print_and_select_default_transcript(info.get("id"))
+        default_transcript = print_and_select_default_transcript(info.get("id"), preferred_language=args.lang)
         
         # Show transcript preview if requested
         if args.preview_transcript and default_transcript:

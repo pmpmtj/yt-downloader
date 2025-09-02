@@ -23,7 +23,7 @@ python -m my_project [URLs...] [OPTIONS]
 | **Flag** | **Type** | **Default** | **Description** | **Examples** |
 |----------|----------|-------------|-----------------|--------------|
 | `--quality` | string | `None` (uses config: `720p`) | Preferred video quality | `720p`, `1080p`, `480p` |
-| `--lang` | string | `None` (auto-detect) | Preferred transcript/audio language | `en`, `pt-BR`, `es` |
+| `--lang` | string | `None` (uses config or smart selection) | **Preferred transcript language** - **OVERRIDES all transcript selection** | `en`, `pt-BR`, `es`, `de`, `fr` |
 
 ### **📄 Transcript Options**
 | **Flag** | **Type** | **Default** | **Description** | **Choices** |
@@ -64,7 +64,8 @@ python -m my_project [URLs...] [OPTIONS]
 - **Retries**: 3 attempts with exponential backoff
 
 ### **📄 Transcript Defaults:**
-- **Languages**: `["en", "en-US", "en-GB"]`
+- **Preferred Languages**: `["en", "en-US", "en-GB"]` (config: `transcripts.preferred_languages`)
+- **Selection Priority**: CLI `--lang` → Config preference → Manual → English auto → Any auto
 - **Formats**: `clean`, `timestamped`, `structured` (all enabled)
 - **Processing**: Text cleaning, chapter detection enabled
 
@@ -87,8 +88,11 @@ python -m my_project https://youtube.com/watch?v=xyz --audio --transcript
 # High-quality download with all transcript formats
 python -m my_project https://youtube.com/watch?v=xyz --video-with-audio --transcript --transcript-formats all --quality 1080p
 
-# LLM analysis workflow
-python -m my_project https://youtube.com/watch?v=xyz --transcript --metadata-analysis --metadata-export json
+# LLM analysis workflow with language preference
+python -m my_project https://youtube.com/watch?v=xyz --transcript --lang en --metadata-analysis --metadata-export json
+
+# Force German transcript (overrides manual English)
+python -m my_project https://youtube.com/watch?v=xyz --transcript --lang de --transcript-formats clean
 
 # Batch processing with preview
 python -m my_project --batch-file urls.txt --preview-transcript --outdir ./downloads
@@ -107,9 +111,10 @@ python -m my_project https://youtube.com/playlist?list=xyz --playlist-start 5 --
 
 1. **⭐ Recommended**: Use `--video-with-audio` for complete video files
 2. **🔍 Preview**: Use `--preview-transcript` to check content quality first
-3. **📊 Analysis**: Combine `--metadata-analysis` with `--metadata-export json` for LLM workflows
-4. **🎯 Quality**: Specify `--quality 720p` for consistent quality across videos
-5. **📁 Organization**: Files are organized by session/video UUIDs automatically
+3. **🌍 Language**: Use `--lang CODE` for specific language preference (overrides all transcript defaults)
+4. **📊 Analysis**: Combine `--metadata-analysis` with `--metadata-export json` for LLM workflows
+5. **🎯 Quality**: Specify `--quality 720p` for consistent quality across videos
+6. **📁 Organization**: Files are organized by session/video UUIDs automatically
 
 ## **⚠️ Important Notes**
 
@@ -119,6 +124,37 @@ python -m my_project https://youtube.com/playlist?list=xyz --playlist-start 5 --
 - **Batch files**: One URL per line, `#` for comments
 - **UUID Organization**: All downloads organized by session and video UUIDs
 - **Fallback Logic**: Automatic quality/format fallbacks if preferred options fail
+- **Language Priority**: `--lang` parameter overrides all transcript selection defaults
+
+## **🌍 Smart Transcript Selection**
+
+### **Priority Order (Strict Hierarchy):**
+1. **🔝 CLI Language** (`--lang de`) - Highest priority, overrides everything
+2. **⚙️ Config Language** (`transcripts.preferred_languages`) - When no CLI --lang
+3. **📝 Manual Transcripts** - Human-created, higher quality  
+4. **🇺🇸 English Auto** - Most reliable auto-generated fallback
+5. **🤖 Any Auto** - Final fallback option
+
+### **Language Selection Examples:**
+```bash
+# Force German (even if English manual exists)
+python -m my_project URL --transcript --lang de
+
+# Use config preference (first available from config list)
+# Config: "preferred_languages": ["pt-BR", "en"] 
+python -m my_project URL --transcript
+
+# No preference = manual transcript preferred over auto-generated
+python -m my_project URL --transcript
+```
+
+### **Language Codes:**
+| Code | Language | Code | Language |
+|------|----------|------|----------|
+| `en` | English | `es` | Spanish |
+| `pt-BR` | Brazilian Portuguese | `fr` | French |
+| `de` | German | `ja` | Japanese |
+| `zh` | Chinese | `ko` | Korean |
 
 ## **📁 Output File Structure**
 
@@ -146,13 +182,13 @@ downloads/
 
 ### **Content Analysis Workflow:**
 ```bash
-# 1. Preview content
-python -m my_project URL --preview-transcript --metadata-analysis
+# 1. Preview content with language preference
+python -m my_project URL --preview-transcript --lang en --metadata-analysis
 
-# 2. Download for analysis
-python -m my_project URL --transcript --transcript-formats clean structured --metadata-export json
+# 2. Download for analysis with specific language
+python -m my_project URL --transcript --lang pt-BR --transcript-formats clean structured --metadata-export json
 
-# 3. Batch process playlist
+# 3. Batch process playlist with language fallback
 python -m my_project PLAYLIST_URL --max-videos 20 --transcript --metadata-export csv
 ```
 

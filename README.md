@@ -90,7 +90,7 @@ python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --transcript --
 #### Enhanced Transcript Options
 - `--transcript-formats FORMAT [FORMAT ...]` - Output formats: `clean`, `timestamped`, `structured`
 - `--preview-transcript` - Preview transcript with quality indicators
-- `--lang LANGUAGE` - Preferred language (e.g., en, pt-BR, es)
+- `--lang LANGUAGE` - **Preferred transcript language** (e.g., en, pt-BR, es, de) - **Overrides all transcript selection defaults**
 
 #### Metadata & Analysis
 - `--metadata-analysis` - Enable comprehensive content analysis
@@ -123,8 +123,11 @@ python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --audio --video
 # LLM analysis workflow
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --transcript --transcript-formats clean structured --metadata-analysis --metadata-export json --outdir ./llm_content
 
-# Multi-language content processing
+# Multi-language content processing with language preference
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --transcript --lang pt-BR --metadata-analysis --metadata-export markdown
+
+# German transcript preference (overrides manual English transcript)
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --transcript --lang de --transcript-formats clean structured
 ```
 
 #### Batch Processing
@@ -200,6 +203,62 @@ All downloaded media files use a deterministic naming convention:
 - **Features**: Complete metadata, quality scores, content analysis
 - **Use Case**: Database import, API integration, advanced processing
 
+### Smart Transcript Selection Logic
+
+The application uses an intelligent transcript selection system with strict priority ordering:
+
+#### **Priority 1: Language Preference (CLI)** 🔝
+```bash
+# German transcript preferred over any other option
+python -m my_project URL --transcript --lang de
+```
+- **Highest priority** - overrides all other selection logic
+- **Language-specific** - exact match required (e.g., `pt-BR` vs `pt`)
+- **Type-agnostic** - will select auto-generated German over manual English
+
+#### **Priority 2: Language Preference (Config)** ⚙️
+```json
+{
+  "transcripts": {
+    "preferred_languages": ["pt-BR", "en", "es"]
+  }
+}
+```
+- **Used when no `--lang` specified**
+- **First available language** from config list is selected
+- **Overrides manual transcript preference**
+
+#### **Priority 3: Manual Transcripts** 📝
+- **Human-created captions** preferred over auto-generated
+- **Higher quality and accuracy**
+- **Selected when no language preference specified**
+
+#### **Priority 4: English Auto-Generated** 🇺🇸  
+- **Fallback for auto-generated content**
+- **Covers `en`, `en-US`, `en-GB` variants**
+- **Most reliable auto-generated option**
+
+#### **Priority 5: Any Auto-Generated** 🤖
+- **Final fallback option**
+- **First available auto-generated transcript**
+- **Ensures content is always accessible**
+
+#### **Selection Examples:**
+```bash
+# Scenario 1: German manual + English manual available
+python -m my_project URL --lang de --transcript
+# Result: Selects German manual (language preference wins)
+
+# Scenario 2: No language preference, German manual + English auto available  
+python -m my_project URL --transcript
+# Result: Selects German manual (manual preference wins)
+
+# Scenario 3: Config prefers Spanish, English manual + Spanish auto available
+# Config: "preferred_languages": ["es", "en"]
+python -m my_project URL --transcript  
+# Result: Selects Spanish auto (config language preference wins)
+```
+
 ### Metadata Export Formats
 
 #### JSON Export (`_metadata.json`)
@@ -232,6 +291,7 @@ The application uses a centralized configuration file for all preferences:
     "output_structure": { "organize_by_type": true }
   },
   "transcripts": {
+    "preferred_languages": ["en", "en-US", "pt-BR"],
     "processing": {
       "output_formats": ["clean", "timestamped", "structured"],
       "text_cleaning": { "enabled": true, "remove_filler_words": true },
@@ -258,10 +318,18 @@ The application uses a centralized configuration file for all preferences:
 2. **Codec efficiency** consideration
 3. **File size optimization** when appropriate
 
-#### Transcript Processing Intelligence
-1. **Language detection** and preference matching
-2. **Quality assessment** (manual vs auto-generated)
-3. **Content analysis** for optimal processing
+#### Enhanced Transcript Selection Intelligence
+1. **Language preference priority** (CLI `--lang` or config override)
+2. **Smart fallback hierarchy** (manual → English auto → any auto)
+3. **Quality assessment** (manual vs auto-generated)
+4. **Content analysis** for optimal processing
+
+**Language Priority System:**
+- **🔝 CLI Language** (`--lang de`) - Highest priority, overrides all defaults
+- **⚙️ Config Language** (`transcripts.preferred_languages`) - Used when no CLI preference
+- **📝 Manual Transcript** - Preferred over auto-generated when no language preference
+- **🇺🇸 English Auto** - Fallback for auto-generated content
+- **🤖 Any Auto** - Final fallback option
 
 ## 🧪 Testing & Development
 
@@ -299,8 +367,9 @@ python run_tests.py fast        # Exclude slow tests for rapid iteration
 
 #### Transcript Issues  
 - **"Transcripts disabled"**: Video owner has disabled captions
-- **"Language not available"**: Try auto-generated transcripts or different language
+- **"Language not available"**: Check available languages with `--info-only`, try `--lang en` for English auto-generated
 - **"Processing failed"**: Check transcript quality and try basic format only
+- **"Wrong language selected"**: Use `--lang CODE` to specify exact language (e.g., `--lang pt-BR` for Brazilian Portuguese)
 
 #### Quality & Performance
 - **Poor transcript quality**: Video may have auto-generated captions only
@@ -312,8 +381,8 @@ python run_tests.py fast        # Exclude slow tests for rapid iteration
 # Test basic functionality
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --info-only
 
-# Test enhanced features
-python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --preview-transcript --metadata-analysis
+# Test enhanced features with language preference
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --preview-transcript --lang en --metadata-analysis
 
 # Test complete workflow
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --video-with-audio --transcript --metadata-export json --outdir ./test_output

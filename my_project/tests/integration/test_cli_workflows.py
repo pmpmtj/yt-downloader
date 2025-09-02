@@ -152,6 +152,10 @@ class TestCLIArgumentValidation:
             ["https://www.youtube.com/watch?v=test", "--transcript", "--transcript-formats", "clean"],
             ["https://www.youtube.com/watch?v=test", "--preview-transcript", "--metadata-analysis"],
             ["https://www.youtube.com/watch?v=test", "--audio", "--quality", "high"],
+            ["https://www.youtube.com/watch?v=test", "--video-only"],
+            ["https://www.youtube.com/watch?v=test", "--video-only", "--quality", "720p"],
+            ["https://www.youtube.com/watch?v=test", "--video-with-audio"],
+            ["https://www.youtube.com/watch?v=test", "--video-with-audio", "--quality", "1080p"],
             ["--batch-file", "urls.txt", "--transcript"]
         ]
         
@@ -190,6 +194,29 @@ class TestCLIArgumentValidation:
             parse_args(["--help"])
         
         assert excinfo.value.code == 0
+    
+    @pytest.mark.integration  
+    def test_video_only_flag_parsing(self):
+        """Test that --video-only flag is parsed correctly with proper attribute name."""
+        from src.my_project.core_CLI import parse_args
+        
+        # Test --video-only flag
+        args = parse_args(["https://www.youtube.com/watch?v=test", "--video-only"])
+        assert hasattr(args, 'video_only')
+        assert args.video_only is True
+        assert args.video_with_audio is False
+        
+        # Test --video-with-audio flag  
+        args = parse_args(["https://www.youtube.com/watch?v=test", "--video-with-audio"])
+        assert hasattr(args, 'video_only')
+        assert args.video_only is False
+        assert args.video_with_audio is True
+        
+        # Test no video flags
+        args = parse_args(["https://www.youtube.com/watch?v=test", "--transcript"])
+        assert hasattr(args, 'video_only')
+        assert args.video_only is False
+        assert args.video_with_audio is False
 
 
 class TestBatchProcessing:
