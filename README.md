@@ -33,8 +33,8 @@ python -m my_project URL --audio --transcript
 
 ## 📚 Documentation
 
-* ⚡ [CLI Quick Reference](CLI_QUICK_REFERENCE.md) — Cheatsheet of commands and flags
-* 📖 [User Manual](USER_MANUAL.md) — Full details, examples, configuration, workflows, troubleshooting
+* ⚡ [CLI Quick Reference](my_project/CLI_QUICK_REFERENCE.md) — Cheatsheet of commands and flags
+* 📖 [User Manual](my_project/USER_MANUAL.md) — Full details, examples, configuration, workflows, troubleshooting
 
 ## 🧪 Testing
 
