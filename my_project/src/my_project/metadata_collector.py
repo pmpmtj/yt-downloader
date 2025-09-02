@@ -37,17 +37,38 @@ class MetadataCollector:
         self.video_metadata_config = self.config.get("video_metadata", {})
         self.quality_config = self.config.get("quality_assessment", {})
         
-        # Common stop words for keyword extraction
-        self.stop_words = {
+        # Load stop words from config with fallback
+        self.stop_words = self._load_stop_words()
+        
+        logger.debug(f"MetadataCollector initialized with config: {self.config}")
+    
+    def _load_stop_words(self) -> set:
+        """Load stop words from config with fallback to default list."""
+        try:
+            # Try to load from config
+            config_stop_words = self.content_analysis_config.get("stop_words", [])
+            if config_stop_words:
+                stop_words_set = set(config_stop_words)
+                logger.debug(f"Loaded {len(stop_words_set)} stop words from config")
+                return stop_words_set
+            else:
+                # Fallback to default stop words
+                logger.debug("No stop words in config, using fallback list")
+                return self._get_default_stop_words()
+        except Exception as e:
+            logger.warning(f"Failed to load stop words from config: {e}")
+            return self._get_default_stop_words()
+    
+    def _get_default_stop_words(self) -> set:
+        """Get default stop words as fallback."""
+        return {
             'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
             'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
             'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must',
             'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they',
             'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'her', 'its', 'our', 'their'
         }
-        
-        logger.debug(f"MetadataCollector initialized with config: {self.config}")
-    
+
     def extract_video_metadata(self, video_info: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """Extract comprehensive video metadata with defensive None handling."""
         logger.debug("Extracting video metadata")

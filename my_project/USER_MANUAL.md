@@ -588,6 +588,20 @@ Files are saved using a deterministic naming convention that includes the video 
 - **Benefits**: Prevents overwrites, enables database relationships, handles special characters
 - **Configurable**: Set via `downloads.filename_template` in app_config.json
 
+### Configurable Stop Words
+Content analysis and keyword extraction use a customizable stop words list for domain-specific optimization:
+- **Location**: `metadata_collection.content_analysis.stop_words` in app_config.json
+- **Benefits**: Customize for scientific, legal, or technical content domains
+- **Fallback**: Built-in default list if config unavailable
+- **Usage**: Filters out common words during keyword extraction and content analysis
+
+### Function-Based Architecture
+The application uses a clean, function-based design pattern for better maintainability:
+- **Stateless Functions**: No unnecessary class instantiation for simple operations
+- **Direct Imports**: Import and use functions directly (e.g., `export_json()`, `export_csv()`)
+- **Simpler Testing**: Functions can be tested independently without class setup
+- **Better Performance**: Reduced memory overhead from avoiding unnecessary object creation
+
 ### Error Handling & Retries
 - **Network failures**: Automatic retry with exponential backoff
 - **Format failures**: Fallback to alternative formats

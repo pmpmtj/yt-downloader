@@ -71,7 +71,14 @@
             "analyze_sentiment": false,
             "detect_language": true,
             "extract_keywords": true,
-            "content_categorization": true
+            "content_categorization": true,
+            "stop_words": [
+                "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with",
+                "by", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had",
+                "do", "does", "did", "will", "would", "could", "should", "may", "might", "must",
+                "this", "that", "these", "those", "i", "you", "he", "she", "it", "we", "they",
+                "me", "him", "her", "us", "them", "my", "your", "his", "her", "its", "our", "their"
+            ]
         },
         "video_metadata": {
             "detailed_description": true,
