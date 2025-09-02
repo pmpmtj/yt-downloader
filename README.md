@@ -83,7 +83,7 @@ python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --transcript --
 #### Core Download Options
 - `--audio` - Download audio (MP3 format)
 - `--video-with-audio` - Download video with audio included ⭐ **RECOMMENDED**
-- `--video` - Download video only (⚠️ silent - no audio)
+- `--video-only` - Download video only (⚠️ silent - no audio)
 - `--transcript` - Download enhanced transcripts
 - `--info-only` - Display comprehensive info without downloading
 
@@ -175,7 +175,7 @@ All downloaded media files use a deterministic naming convention:
 - **Use Cases**: General downloads, content archiving, media consumption
 - **Output**: `video_with_audio/` directory
 
-#### `--video` ⚠️ **SILENT VIDEO**
+#### `--video-only` ⚠️ **SILENT VIDEO**
 - **Purpose**: Video-only streams without audio
 - **Technical**: Selects video-only formats (vcodec != 'none', acodec == 'none')
 - **Quality**: Supports `--quality` parameter
