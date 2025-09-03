@@ -15,6 +15,7 @@ python -m my_project [URLs...] [OPTIONS]
 * **URLs** can be one or many (space‑separated). Playlists are supported.
 * **Batch mode** via `--batch-file file.txt` (one URL per line, `#` for comments).
 * If **no content flags** are provided, the tool defaults to **info/preview mode** (no download). You can also use `--info-only` explicitly.
+* **Debug mode**: `--print-config` shows effective configuration and exits (no URLs needed).
 
 ---
 
@@ -60,6 +61,12 @@ python -m my_project [URLs...] [OPTIONS]
 | `--max-videos`     | int    | `None`  | Limit playlist items processed | Works with playlist URLs           |
 | `--playlist-start` | int    | `1`     | Start index within playlist    | 1‑based                            |
 | `--playlist-end`   | int    | `None`  | End index within playlist      | Inclusive upper bound              |
+
+### Debugging & Configuration
+
+| Flag             | Type | Default | What it does                              | Notes                                     |
+| ---------------- | ---- | ------- | ----------------------------------------- | ----------------------------------------- |
+| `--print-config` | flag | `False` | Show effective configuration and exit     | ⚡ Debug config issues & CLI overrides   |
 
 > 🧠 **Transcript selection priority**: `--lang` (CLI) → config preferred languages → **manual captions** → English auto → any auto. See **USER\_MANUAL.md** for details.
 
@@ -153,6 +160,22 @@ python -m my_project PLAYLIST_URL --max-videos 10 --video-with-audio
 python -m my_project PLAYLIST_URL --playlist-start 5 --playlist-end 15 --transcript
 ```
 
+### Debugging & Configuration
+
+```bash
+# See current effective configuration
+python -m my_project --print-config
+
+# Debug config with CLI overrides
+python -m my_project --print-config --quality 1080p --outdir ./custom
+
+# Check transcript format settings
+python -m my_project --print-config --transcript-formats clean structured
+
+# Verify all settings before running
+python -m my_project --print-config --video-with-audio --quality 720p --transcript
+```
+
 ---
 
 ## 📁 What to Expect in Outputs
@@ -168,8 +191,17 @@ python -m my_project PLAYLIST_URL --playlist-start 5 --playlist-end 15 --transcr
 
 * `--video-only` is **silent** by design. Use `--video-with-audio` for normal viewing.
 * Passing multiple content flags is allowed (e.g., `--audio --video-with-audio --transcript`).
-* If a preferred quality/format isn’t available, the tool **falls back intelligently**.
+* If a preferred quality/format isn't available, the tool **falls back intelligently**.
 * Use `--lang CODE` to guarantee transcript language when available.
+
+### 🔍 When to Use `--print-config`
+
+* **Before first run**: Check what settings are actually loaded from your config
+* **Quality issues**: Videos not downloading in expected quality? Verify effective settings
+* **Path problems**: Files going to wrong directory? See the actual output paths
+* **Transcript troubles**: No transcript files created? Check format configuration
+* **CLI override testing**: Confirm your `--quality`, `--outdir` flags are working
+* **Schema migration**: After config changes, verify normalization worked correctly
 
 ---
 
