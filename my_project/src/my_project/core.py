@@ -62,6 +62,45 @@ def is_default_format(fmt: dict) -> bool:
     return 'default' in note or 'default' in lang
 
 
+# -------------------- Language Utilities --------------------
+
+def _norm_lang(code):
+    """Normalize language code for comparison."""
+    if not code: 
+        return None
+    return code.strip().lower().replace("_", "-")
+
+
+def _fmt_audio_lang(fmt):
+    """Extract normalized audio language from format dict."""
+    return _norm_lang(fmt.get("language") or fmt.get("audio_lang") or fmt.get("lang"))
+
+
+def _lang_matches(lang, preferred):
+    """Check if language matches any of the preferred languages."""
+    if not preferred: 
+        return True
+    if not lang: 
+        return False
+    lang = _norm_lang(lang)
+    prefs = [_norm_lang(x) for x in preferred]
+    if lang in prefs: 
+        return True
+    # Also check base language (e.g., 'pt' matches 'pt-BR')
+    return any(lang.split("-")[0] == p.split("-")[0] for p in prefs)
+
+
+def list_available_audio_languages(formats):
+    """List available audio languages from formats with counts."""
+    langs = {}
+    for f in formats:
+        if f.get("acodec") and f.get("acodec") != "none":
+            lang = _fmt_audio_lang(f) or "und"  # 'und' for undefined
+            langs[lang] = langs.get(lang, 0) + 1
+    # Sort by frequency (descending), then alphabetically
+    return dict(sorted(langs.items(), key=lambda kv: (-kv[1], kv[0])))
+
+
 # -------------------- Smart Format Selection --------------------
 
 def get_quality_score(fmt: dict, preferred_quality: str, is_audio: bool = True) -> int:
@@ -323,6 +362,77 @@ def select_combined_video_audio(formats: List[Dict[str, Any]], preferences: Opti
         logger.warning("No suitable combined format found")
     
     return selected, combined_formats
+
+
+# -------------------- Language-Aware Format Selection --------------------
+
+def select_combined_with_lang(formats, video_prefs, preferred_langs):
+    """Select combined (video+audio) formats with language filtering."""
+    combined = [f for f in formats if is_combined_format(f)]
+    if not combined: 
+        return None
+
+    logger.debug(f"Found {len(combined)} combined formats, filtering by languages: {preferred_langs}")
+
+    if preferred_langs:
+        # Filter by language preference first
+        filtered = [f for f in combined if _lang_matches(_fmt_audio_lang(f), preferred_langs)]
+        logger.debug(f"Language filtering: {len(filtered)} formats match preferred languages")
+        if filtered:
+            selected = smart_video_selection(filtered, video_prefs)
+            if selected:
+                lang = _fmt_audio_lang(selected)
+                logger.info(f"Selected combined format with preferred language: {lang}")
+                return selected
+
+    # Fallback to best available combined format
+    logger.debug("No language match found, falling back to best combined format")
+    return smart_video_selection(combined, video_prefs)
+
+
+def select_video_plus_audio_with_lang(formats, video_prefs, audio_prefs, preferred_langs):
+    """Select separate video + audio streams with language matching."""
+    vids = [f for f in formats if is_video_format(f)]
+    auds = [f for f in formats if is_audio_format(f)]
+
+    logger.debug(f"Found {len(vids)} video formats and {len(auds)} audio formats")
+
+    best_video = smart_video_selection(vids, video_prefs) if vids else None
+    if not best_video: 
+        logger.warning("No suitable video format found")
+        return None, None
+
+    logger.debug(f"Selected video format: {best_video.get('format_id')}")
+
+    if preferred_langs:
+        # Filter audio by language preference
+        lang_matched = [a for a in auds if _lang_matches(_fmt_audio_lang(a), preferred_langs)]
+        logger.debug(f"Language filtering: {len(lang_matched)} audio formats match preferred languages")
+        if lang_matched:
+            best_audio = smart_audio_selection(lang_matched, audio_prefs)
+            if best_audio:
+                lang = _fmt_audio_lang(best_audio)
+                logger.info(f"Selected audio format with preferred language: {lang}")
+                return best_video, best_audio
+
+    # Fallback to best available audio
+    logger.debug("No language match found, falling back to best audio format")
+    best_audio = smart_audio_selection(auds, audio_prefs) if auds else None
+    return best_video, best_audio
+
+
+def build_format_string(video_fmt, audio_fmt):
+    """Build format string for yt-dlp from video and audio formats."""
+    if video_fmt and audio_fmt:
+        format_string = f"{video_fmt['format_id']}+{audio_fmt['format_id']}"
+        logger.debug(f"Built format string for merging: {format_string}")
+        return format_string
+    elif video_fmt:
+        logger.debug(f"Using video-only format: {video_fmt['format_id']}")
+        return video_fmt['format_id']
+    else:
+        logger.warning("No suitable format found")
+        return None
 
 
 # -------------------- Transcript Metadata --------------------
@@ -673,12 +783,26 @@ def print_audio_formats(audio_formats: List[Dict[str, Any]], default_audio: Opti
     print("-" * 40)
     for f in audio_formats:
         tag = "[DEFAULT]" if f == default_audio else ""
+        lang = _fmt_audio_lang(f) or ""
         print(
             f"[{f.get('format_id')}] {f.get('ext')} | "
             f"{f.get('format_note', '')} | {f.get('acodec')} | "
-            f"{f.get('language', '')} | "
+            f"lang: {lang} | "
             f"{format_filesize_display(f)} {tag}"
         )
+
+
+def print_available_audio_languages(formats: List[Dict[str, Any]]):
+    """Print available audio languages from formats."""
+    audio_langs = list_available_audio_languages(formats)
+    if audio_langs:
+        print("\nAvailable Audio Languages")
+        print("-" * 40)
+        for lang, count in audio_langs.items():
+            lang_display = lang if lang != "und" else "undefined"
+            print(f"{lang_display: <12} | {count} format(s)")
+    else:
+        print("\nNo audio languages detected")
 
 
 def print_video_formats(video_formats: List[Dict[str, Any]], default_video: Optional[Dict]):

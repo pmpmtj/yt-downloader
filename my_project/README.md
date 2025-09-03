@@ -7,6 +7,7 @@ A sophisticated command-line tool for downloading YouTube content with advanced 
 ### Core Functionality
 - **Multi-format Support**: Download audio (MP3), video with audio (MP4), and enhanced transcripts
 - **Smart Video Downloads**: Intelligent video+audio merging with quality control
+- **Audio Language Selection**: Prefer specific audio languages with intelligent fallback
 - **Smart Format Selection**: Intelligent scoring system with fallback mechanisms
 - **Advanced Transcript Processing**: Text cleaning, chapter detection, multiple output formats
 - **Rich Metadata Collection**: Content analysis, quality assessment, and comprehensive video metadata
@@ -90,7 +91,11 @@ python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --transcript --
 #### Enhanced Transcript Options
 - `--transcript-formats FORMAT [FORMAT ...]` - Output formats: `clean`, `timestamped`, `structured`
 - `--preview-transcript` - Preview transcript with quality indicators
-- `--lang LANGUAGE` - Preferred language (e.g., en, pt-BR, es)
+- `--lang LANGUAGE` - Preferred transcript language (e.g., en, pt-BR, es)
+
+#### Audio Language Selection
+- `--audio-lang LANGUAGE [LANGUAGE ...]` - Preferred audio language(s) in priority order
+- `--require-audio-lang` - Fail if requested audio language not available
 
 #### Metadata & Analysis
 - `--metadata-analysis` - Enable comprehensive content analysis
@@ -120,11 +125,17 @@ python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --preview-trans
 # High-quality download with all transcript formats
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --audio --video-with-audio --transcript --transcript-formats clean timestamped structured --quality 720p
 
+# Video with Portuguese audio preference
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --video-with-audio --audio-lang pt-PT --quality 1080p
+
+# Multi-language audio priorities with strict requirement
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --video-with-audio --audio-lang en pt-PT pt-BR --require-audio-lang
+
 # LLM analysis workflow
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --transcript --transcript-formats clean structured --metadata-analysis --metadata-export json --outdir ./llm_content
 
-# Multi-language content processing
-python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --transcript --lang pt-BR --metadata-analysis --metadata-export markdown
+# Multi-language content processing with audio language preference
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --video-with-audio --audio-lang pt-BR --transcript --lang pt-BR --metadata-analysis --metadata-export markdown
 ```
 
 #### Batch Processing
@@ -227,7 +238,12 @@ The application uses a centralized configuration file for all preferences:
 ```json
 {
   "downloads": {
-    "audio": { "quality": "192", "format": "mp3" },
+    "audio": { 
+      "quality": "192", 
+      "format": "mp3",
+      "preferred_languages": ["en", "pt-PT", "pt-BR"],
+      "require_language_match": false
+    },
     "video": { "quality": "720p", "format": "mp4" },
     "output_structure": { "organize_by_type": true }
   },
@@ -249,9 +265,10 @@ The application uses a centralized configuration file for all preferences:
 ### Smart Format Selection
 
 #### Audio Selection Algorithm
-1. **Quality scoring** based on bitrate and codec
-2. **Format compatibility** prioritization  
-3. **Fallback chain** for maximum reliability
+1. **Language preference** matching with intelligent fallback
+2. **Quality scoring** based on bitrate and codec
+3. **Format compatibility** prioritization  
+4. **Fallback chain** for maximum reliability
 
 #### Video Selection Algorithm  
 1. **Resolution preference** matching
@@ -315,8 +332,11 @@ python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --info-only
 # Test enhanced features
 python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --preview-transcript --metadata-analysis
 
-# Test complete workflow
-python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --video-with-audio --transcript --metadata-export json --outdir ./test_output
+# Test audio language selection
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --video-with-audio --audio-lang pt-PT --info-only
+
+# Test complete workflow with audio language preference
+python -m my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --video-with-audio --audio-lang en --transcript --metadata-export json --outdir ./test_output
 ```
 
 ## 🚀 Development Status

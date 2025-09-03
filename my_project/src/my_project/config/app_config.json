@@ -22,7 +22,9 @@
             "preferred_bitrate": "192",
             "fallback_qualities": ["medium", "low", "high"],
             "preferred_formats": ["mp3", "m4a", "ogg"],
-            "max_fallback_attempts": 3
+            "max_fallback_attempts": 3,
+            "preferred_languages": ["en", "pt-PT", "pt-BR"],
+            "require_language_match": false
         }
     },
     "format_selection": {

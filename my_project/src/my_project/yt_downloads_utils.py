@@ -106,21 +106,26 @@ def download_video(url: str, format_id: str, save_path: Optional[str] = None, ma
     return False
 
 
-def download_video_with_audio(url: str, quality_preference: str = "720p", save_path: Optional[str] = None, max_retries: int = 3, retry_delay: int = 2):
+def download_video_with_audio(url: str, quality_preference: str = "720p", save_path: Optional[str] = None, max_retries: int = 3, retry_delay: int = 2, format_override: Optional[str] = None):
     """Download video with audio using intelligent format selection."""
     outtmpl = get_filename_template(save_path)
-    logger.info(f"Starting video+audio download: quality={quality_preference}, save_path={save_path}")
+    logger.info(f"Starting video+audio download: quality={quality_preference}, save_path={save_path}, format_override={format_override}")
     
-    # Create intelligent format selector based on quality preference
-    max_height = "1080" if quality_preference == "1080p" else "720" if quality_preference == "720p" else "480" if quality_preference == "480p" else "720"
-    
-    # Try combined formats first, then merge separate streams as fallback
-    format_selectors = [
-        f'best[height<={max_height}][ext=mp4]',  # Best combined format with height limit
-        f'bestvideo[height<={max_height}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={max_height}]+bestaudio',  # Merge separate streams
-        f'best[height<={max_height}]',  # Any best format with height limit
-        'best',  # Ultimate fallback
-    ]
+    # Use format override if provided (for language-specific selection)
+    if format_override:
+        format_selectors = [format_override]
+        logger.info(f"Using format override: {format_override}")
+    else:
+        # Create intelligent format selector based on quality preference
+        max_height = "1080" if quality_preference == "1080p" else "720" if quality_preference == "720p" else "480" if quality_preference == "480p" else "720"
+        
+        # Try combined formats first, then merge separate streams as fallback
+        format_selectors = [
+            f'best[height<={max_height}][ext=mp4]',  # Best combined format with height limit
+            f'bestvideo[height<={max_height}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={max_height}]+bestaudio',  # Merge separate streams
+            f'best[height<={max_height}]',  # Any best format with height limit
+            'best',  # Ultimate fallback
+        ]
     
     opts = {
         'quiet': False,

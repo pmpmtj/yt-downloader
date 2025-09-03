@@ -49,6 +49,11 @@ python -m my_project [URL(s)] [OPTIONS]
 * `--transcript` — Download transcripts
 * `--info-only` — Show video info without downloading
 
+### Audio Language Options
+
+* `--audio-lang LANG [LANG ...]` — Preferred audio language(s) in priority order
+* `--require-audio-lang` — Fail if requested audio language not available
+
 ### Transcript Options
 
 * `--transcript-formats [clean|timestamped|structured|all]`
@@ -77,6 +82,7 @@ python -m my_project [URL(s)] [OPTIONS]
 Key sections:
 
 * **downloads**: output folder structure, quality defaults
+* **quality_preferences.audio**: audio language preferences, fallback behavior
 * **transcripts**: preferred languages, cleaning, chapter detection
 * **metadata\_collection**: analysis features, export settings
 * **network**: retries, timeouts, user-agent
@@ -120,7 +126,17 @@ python -m my_project URL --transcript --transcript-formats clean
 ### Video + Audio Download
 
 ```bash
+# Basic video with audio
 python -m my_project URL --video-with-audio --quality 1080p
+
+# Video with Portuguese audio preference
+python -m my_project URL --video-with-audio --audio-lang pt-PT
+
+# Multiple language priorities
+python -m my_project URL --video-with-audio --audio-lang en pt-PT pt-BR
+
+# Strict language requirement
+python -m my_project URL --video-with-audio --audio-lang es --require-audio-lang
 ```
 
 ### Metadata Analysis Workflow
@@ -159,9 +175,11 @@ python run_tests.py integration
 ## 📊 Advanced Features
 
 * **Smart transcript selection hierarchy**: CLI `--lang` > config > manual > English auto > any auto
+* **Audio language selection hierarchy**: CLI `--audio-lang` > config > combined formats > separate video+audio merge > fallback to original
 * **Content quality scoring & LLM suitability evaluation**
 * **Chapter detection and structured transcript exports**
 * **Session UUIDs for organized downloads**
+* **Intelligent format merging**: Tries combined formats first, then merges separate streams when needed
 
 ---
 

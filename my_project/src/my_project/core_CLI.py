@@ -23,12 +23,18 @@ from .core import (
     select_default_audio,
     select_default_video,
     select_combined_video_audio,
+    select_combined_with_lang,
+    select_video_plus_audio_with_lang,
+    build_format_string,
     print_basic_info,
     print_audio_formats,
     print_video_formats,
+    print_available_audio_languages,
     print_and_select_default_transcript,
     print_transcript_preview,
-    list_transcript_metadata
+    list_transcript_metadata,
+    _lang_matches,
+    _fmt_audio_lang
 )
 from .yt_downloads_utils import (
     download_audio,
@@ -153,6 +159,8 @@ def parse_args(args=None):
     parser.add_argument("--max-videos", type=int, default=None, help="Maximum number of videos to process from playlists")
     parser.add_argument("--playlist-start", type=int, default=1, help="Playlist video to start at (default: 1)")
     parser.add_argument("--playlist-end", type=int, default=None, help="Playlist video to end at")
+    parser.add_argument("--audio-lang", nargs="+", help="Preferred audio language(s), e.g., en pt-PT pt-BR. If unavailable, falls back unless --require-audio-lang is set.")
+    parser.add_argument("--require-audio-lang", action="store_true", help="Fail if the requested audio language is not available.")
     parser.add_argument("--print-config", action="store_true", help="Print effective configuration and exit")
 
     return parser.parse_args(args)
@@ -194,6 +202,10 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
             print_video_formats(video_list, default_video)
             if combined_list:
                 print_video_formats(combined_list, default_combined)  # Combined formats display as video formats
+            
+            # Show available audio languages
+            print_available_audio_languages(formats)
+            
             print("\n=== Defaults Selected ===")
             if default_audio:
                 print(f"Default audio: [{default_audio.get('format_id')}] {default_audio.get('ext')} | {default_audio.get('format_note')}")
@@ -203,6 +215,12 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
                 print(f"Default video+audio: [{default_combined.get('format_id')}] {default_combined.get('ext')} | {default_combined.get('format_note')} | {default_combined.get('height')}p")
             if default_transcript:
                 print(f"Default transcript language: {default_transcript.get('language')}")
+            
+            # Show audio language preferences if specified
+            if args.audio_lang:
+                print(f"Preferred audio languages: {', '.join(args.audio_lang)}")
+                if args.require_audio_lang:
+                    print("Strict language requirement: ENABLED")
             
             print(f"\nWould download to structure: {base_downloads_dir}/{session_uuid}/{video_uuid}/[audio|video|video_with_audio|transcripts]/")
             return {"status": "info_only", "video_id": info.get("id"), "title": info.get("title")}
@@ -248,20 +266,87 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
             except Exception as e:
                 print(f"💥 Video download error: {str(e)}")
 
-        if args.video_with_audio and default_combined:
+        if args.video_with_audio:
             try:
                 video_audio_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "video_with_audio")
                 template = get_filename_template()
                 filename = os.path.join(str(video_audio_dir), template)
                 print(f"\nDownloading video+audio to: {video_audio_dir}/{template}")
                 
-                # Use the intelligent video+audio downloader with quality preference
-                quality_pref = args.quality or "720p"
-                if download_video_with_audio(url, quality_pref, filename):
+                # Get language preferences from CLI args or config
+                preferred_langs = args.audio_lang or []
+                require_lang = args.require_audio_lang or False
+                
+                if not preferred_langs:
+                    # Try to get from config if not specified via CLI
+                    try:
+                        from .utils.path_utils import load_normalized_config
+                        config = load_normalized_config()
+                        preferred_langs = config.get("quality_preferences", {}).get("audio", {}).get("preferred_languages", [])
+                        if not require_lang:
+                            require_lang = config.get("quality_preferences", {}).get("audio", {}).get("require_language_match", False)
+                    except Exception as e:
+                        logger.debug(f"Could not load audio language config: {e}")
+                
+                # Language-aware format selection
+                success = False
+                try:
+                    from .utils.path_utils import load_normalized_config
+                    config = load_normalized_config()
+                    video_prefs = config.get("quality_preferences", {}).get("video", {})
+                    audio_prefs = config.get("quality_preferences", {}).get("audio", {})
+                except Exception:
+                    video_prefs = {}
+                    audio_prefs = {}
+                
+                # Override quality preference if provided via CLI
+                if args.quality:
+                    video_prefs = video_prefs.copy()
+                    video_prefs['preferred_quality'] = args.quality
+                
+                if preferred_langs:
+                    print(f"🎵 Preferred audio languages: {', '.join(preferred_langs)}")
+                    if require_lang:
+                        print("🔒 Strict language requirement enabled")
+                    
+                    # Try combined formats with language filtering first
+                    selected_combined = select_combined_with_lang(formats, video_prefs, preferred_langs)
+                    
+                    if selected_combined and (not preferred_langs or _lang_matches(_fmt_audio_lang(selected_combined), preferred_langs)):
+                        # Use combined format with preferred language
+                        print(f"📹 Using combined format: {selected_combined.get('format_id')} (language: {_fmt_audio_lang(selected_combined) or 'unknown'})")
+                        
+                        from .yt_downloads_utils import download_video_with_audio_by_format
+                        if hasattr(__import__('my_project.yt_downloads_utils', fromlist=['download_video_with_audio_by_format']), 'download_video_with_audio_by_format'):
+                            success = download_video_with_audio_by_format(url, selected_combined.get('format_id'), filename)
+                        else:
+                            # Fallback to existing function with format override
+                            success = download_video_with_audio(url, args.quality or "720p", filename, format_override=selected_combined.get('format_id'))
+                    else:
+                        # Try separate video+audio with language matching
+                        video_fmt, audio_fmt = select_video_plus_audio_with_lang(formats, video_prefs, audio_prefs, preferred_langs)
+                        
+                        if video_fmt and audio_fmt and _lang_matches(_fmt_audio_lang(audio_fmt), preferred_langs):
+                            format_string = build_format_string(video_fmt, audio_fmt)
+                            print(f"📹 Using separate streams: {format_string} (audio language: {_fmt_audio_lang(audio_fmt) or 'unknown'})")
+                            
+                            # Use yt-dlp directly with format string
+                            success = download_video_with_audio(url, args.quality or "720p", filename, format_override=format_string)
+                        elif require_lang:
+                            raise RuntimeError(f"Requested audio language(s) {preferred_langs} not available for this video.")
+                        else:
+                            print(f"⚠️ Preferred audio language not available, falling back to best quality")
+                            success = download_video_with_audio(url, args.quality or "720p", filename)
+                else:
+                    # No language preference, use existing logic
+                    success = download_video_with_audio(url, args.quality or "720p", filename)
+                
+                if success:
                     success_count += 1
                     print(f"✅ Video+audio download completed successfully")
                 else:
                     print(f"❌ Video+audio download failed after all attempts")
+                    
             except Exception as e:
                 print(f"💥 Video+audio download error: {str(e)}")
 
@@ -459,6 +544,23 @@ def print_effective_config(args):
                 effective_config["transcripts"]["processing"] = {}
             effective_config["transcripts"]["processing"]["output_formats_list"] = args.transcript_formats
         
+        # Show audio language overrides
+        if hasattr(args, 'audio_lang') and args.audio_lang:
+            print(f"\n🔧 CLI Override: --audio-lang {args.audio_lang}")
+            if "quality_preferences" not in effective_config:
+                effective_config["quality_preferences"] = {}
+            if "audio" not in effective_config["quality_preferences"]:
+                effective_config["quality_preferences"]["audio"] = {}
+            effective_config["quality_preferences"]["audio"]["preferred_languages"] = args.audio_lang
+        
+        if hasattr(args, 'require_audio_lang') and args.require_audio_lang:
+            print(f"\n🔧 CLI Override: --require-audio-lang")
+            if "quality_preferences" not in effective_config:
+                effective_config["quality_preferences"] = {}
+            if "audio" not in effective_config["quality_preferences"]:
+                effective_config["quality_preferences"]["audio"] = {}
+            effective_config["quality_preferences"]["audio"]["require_language_match"] = True
+        
         # Show output directory override
         if hasattr(args, 'outdir') and args.outdir and args.outdir != ".":
             print(f"\n🔧 CLI Override: --outdir {args.outdir}")
@@ -480,6 +582,8 @@ def print_effective_config(args):
         
         print(f"📹 Video Quality: {video_prefs.get('preferred_quality', 'DEFAULT')}")
         print(f"🎵 Audio Quality: {audio_prefs.get('preferred_quality', 'DEFAULT')}")
+        print(f"🎵 Audio Languages: {audio_prefs.get('preferred_languages', ['DEFAULT'])}")
+        print(f"🔒 Require Audio Language: {audio_prefs.get('require_language_match', 'DEFAULT')}")
         print(f"📝 Transcript Formats: {transcript_prefs.get('output_formats_list', ['DEFAULT'])}")
         print(f"📁 Output Directory: {effective_config.get('downloads', {}).get('base_directory', 'DEFAULT')}")
         print(f"🔧 Sanitize Filenames: {effective_config.get('behavior', {}).get('sanitize_filenames', 'DEFAULT')}")

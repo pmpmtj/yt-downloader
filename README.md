@@ -5,7 +5,7 @@ A command-line tool for downloading YouTube videos, audio, and transcripts with 
 ## ✨ Features
 
 * Download audio (MP3), video (MP4), and transcripts
-* Smart format and quality selection
+* Smart format and quality selection with audio language preferences
 * Rich metadata collection and LLM-ready exports (JSON/CSV/Markdown)
 * Batch processing and playlist support
 * Cross-platform (Windows/Linux/macOS)

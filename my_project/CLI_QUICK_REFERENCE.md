@@ -46,6 +46,13 @@ python -m my_project [URLs...] [OPTIONS]
 | `--metadata-analysis` | flag   | `False` | Enable content analysis (topics/keywords/quality) | Adds insights to previews and structured exports |
 | `--metadata-export`   | string | `None`  | Export metadata                                   | `json`, `csv`, `markdown`                        |
 
+### Audio Language Selection
+
+| Flag                   | Type   | Default | What it does                                    | Choices / Notes                                           |
+| ---------------------- | ------ | ------- | ----------------------------------------------- | --------------------------------------------------------- |
+| `--audio-lang`         | list   | `None`  | Preferred audio language(s)                     | e.g., `en`, `pt-PT`, `pt-BR` — falls back if unavailable |
+| `--require-audio-lang` | flag   | `False` | Fail if requested audio language not available | Use with `--audio-lang` for strict language requirement  |
+
 ### Quality & Output
 
 | Flag        | Type   | Default         | What it does                | Choices / Notes                                                      |
@@ -69,6 +76,8 @@ python -m my_project [URLs...] [OPTIONS]
 | `--print-config` | flag | `False` | Show effective configuration and exit     | ⚡ Debug config issues & CLI overrides   |
 
 > 🧠 **Transcript selection priority**: `--lang` (CLI) → config preferred languages → **manual captions** → English auto → any auto. See **USER\_MANUAL.md** for details.
+> 
+> 🎵 **Audio language priority**: `--audio-lang` (CLI) → config preferred languages → **combined formats** → separate video+audio merge → fallback to original audio.
 
 ---
 
@@ -82,7 +91,7 @@ python -m my_project [URLs...] [OPTIONS]
 # Default info/preview (no downloads)
 python -m my_project URL
 
-# Explicit info only
+# Explicit info only (shows available audio languages)
 python -m my_project URL --info-only
 
 # Preview transcript with insights
@@ -103,6 +112,28 @@ python -m my_project URL --video-only
 
 # Audio only (MP3)
 python -m my_project URL --audio
+```
+
+### Audio Language Selection
+
+```bash
+# Prefer Portuguese audio (falls back to original if unavailable)
+python -m my_project URL --video-with-audio --audio-lang pt-PT
+
+# Multiple language preferences (priority order)
+python -m my_project URL --video-with-audio --audio-lang en pt-PT pt-BR
+
+# Strict language requirement (fails if Spanish not available)
+python -m my_project URL --video-with-audio --audio-lang es --require-audio-lang
+
+# Check available audio languages before downloading
+python -m my_project URL --info-only
+
+# Audio-only download with language preference
+python -m my_project URL --audio --audio-lang pt-PT
+
+# Multiple videos with consistent audio language preference
+python -m my_project URL1 URL2 URL3 --video-with-audio --audio-lang en
 ```
 
 ### Quality & Output
@@ -160,6 +191,22 @@ python -m my_project PLAYLIST_URL --max-videos 10 --video-with-audio
 python -m my_project PLAYLIST_URL --playlist-start 5 --playlist-end 15 --transcript
 ```
 
+### Combined Features
+
+```bash
+# High-quality video with Portuguese audio and transcripts
+python -m my_project URL --video-with-audio --quality 1080p --audio-lang pt-PT --transcript
+
+# Audio language + metadata export
+python -m my_project URL --video-with-audio --audio-lang es --metadata-export json
+
+# Batch download with preferred audio language
+python -m my_project --batch-file urls.txt --video-with-audio --audio-lang en
+
+# Strict language requirement with custom output folder
+python -m my_project URL --video-with-audio --audio-lang pt-BR --require-audio-lang --outdir ./portuguese-videos
+```
+
 ### Debugging & Configuration
 
 ```bash
@@ -172,8 +219,8 @@ python -m my_project --print-config --quality 1080p --outdir ./custom
 # Check transcript format settings
 python -m my_project --print-config --transcript-formats clean structured
 
-# Verify all settings before running
-python -m my_project --print-config --video-with-audio --quality 720p --transcript
+# Verify all settings including audio language preferences
+python -m my_project --print-config --video-with-audio --quality 720p --audio-lang pt-PT --transcript
 ```
 
 ---
@@ -193,6 +240,9 @@ python -m my_project --print-config --video-with-audio --quality 720p --transcri
 * Passing multiple content flags is allowed (e.g., `--audio --video-with-audio --transcript`).
 * If a preferred quality/format isn't available, the tool **falls back intelligently**.
 * Use `--lang CODE` to guarantee transcript language when available.
+* Audio language selection works with `--video-with-audio` — tries combined formats first, then merges separate streams.
+* `--audio-lang` accepts multiple languages in priority order (first available wins).
+* Without `--require-audio-lang`, the tool falls back to original audio if preferred language unavailable.
 
 ### 🔍 When to Use `--print-config`
 
