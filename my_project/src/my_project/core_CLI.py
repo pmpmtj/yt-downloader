@@ -153,6 +153,7 @@ def parse_args(args=None):
     parser.add_argument("--max-videos", type=int, default=None, help="Maximum number of videos to process from playlists")
     parser.add_argument("--playlist-start", type=int, default=1, help="Playlist video to start at (default: 1)")
     parser.add_argument("--playlist-end", type=int, default=None, help="Playlist video to end at")
+    parser.add_argument("--print-config", action="store_true", help="Print effective configuration and exit")
 
     return parser.parse_args(args)
 
@@ -281,10 +282,14 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
                     try:
                         from .utils.path_utils import load_normalized_config
                         config = load_normalized_config()
-                        format_config = config.get("transcripts", {}).get("processing", {}).get("output_formats", {})
-                        transcript_formats = [fmt for fmt, enabled in format_config.items() if enabled]
+                        # Use normalized list format from config_utils
+                        transcript_formats = config.get("transcripts", {}).get("processing", {}).get("output_formats_list", [])
                         if not transcript_formats:
-                            transcript_formats = ["timestamped"]  # Fallback
+                            # Fallback to boolean dict if list not available (backward compatibility)
+                            format_config = config.get("transcripts", {}).get("processing", {}).get("output_formats", {})
+                            transcript_formats = [fmt for fmt, enabled in format_config.items() if enabled]
+                        if not transcript_formats:
+                            transcript_formats = ["timestamped"]  # Safe fallback
                     except:
                         transcript_formats = ["timestamped"]  # Safe fallback
                 
@@ -419,8 +424,80 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
         return {"status": "error", "url": url, "error": str(e)}
 
 
+def print_effective_config(args):
+    """Print the effective configuration after CLI overrides."""
+    try:
+        from .utils.path_utils import load_normalized_config
+        config = load_normalized_config()
+        
+        print("=" * 60)
+        print("EFFECTIVE CONFIGURATION")
+        print("=" * 60)
+        
+        # Apply CLI overrides to show effective values
+        effective_config = config.copy()
+        
+        # Show quality overrides
+        if hasattr(args, 'quality') and args.quality:
+            print(f"\n🔧 CLI Override: --quality {args.quality}")
+            if "quality_preferences" not in effective_config:
+                effective_config["quality_preferences"] = {}
+            if "video" not in effective_config["quality_preferences"]:
+                effective_config["quality_preferences"]["video"] = {}
+            if "audio" not in effective_config["quality_preferences"]:
+                effective_config["quality_preferences"]["audio"] = {}
+            
+            effective_config["quality_preferences"]["video"]["preferred_quality"] = args.quality
+            effective_config["quality_preferences"]["audio"]["preferred_quality"] = args.quality
+        
+        # Show transcript formats overrides
+        if hasattr(args, 'transcript_formats') and args.transcript_formats:
+            print(f"\n🔧 CLI Override: --transcript-formats {args.transcript_formats}")
+            if "transcripts" not in effective_config:
+                effective_config["transcripts"] = {}
+            if "processing" not in effective_config["transcripts"]:
+                effective_config["transcripts"]["processing"] = {}
+            effective_config["transcripts"]["processing"]["output_formats_list"] = args.transcript_formats
+        
+        # Show output directory override
+        if hasattr(args, 'outdir') and args.outdir and args.outdir != ".":
+            print(f"\n🔧 CLI Override: --outdir {args.outdir}")
+            effective_config["downloads"]["base_directory"] = args.outdir
+        
+        # Pretty print the effective configuration
+        import json
+        print("\n📋 Configuration JSON:")
+        print(json.dumps(effective_config, indent=2, ensure_ascii=False))
+        
+        # Show key selections that will be used
+        print("\n" + "=" * 60)
+        print("KEY EFFECTIVE SETTINGS")
+        print("=" * 60)
+        
+        video_prefs = effective_config.get("quality_preferences", {}).get("video", {})
+        audio_prefs = effective_config.get("quality_preferences", {}).get("audio", {})
+        transcript_prefs = effective_config.get("transcripts", {}).get("processing", {})
+        
+        print(f"📹 Video Quality: {video_prefs.get('preferred_quality', 'DEFAULT')}")
+        print(f"🎵 Audio Quality: {audio_prefs.get('preferred_quality', 'DEFAULT')}")
+        print(f"📝 Transcript Formats: {transcript_prefs.get('output_formats_list', ['DEFAULT'])}")
+        print(f"📁 Output Directory: {effective_config.get('downloads', {}).get('base_directory', 'DEFAULT')}")
+        print(f"🔧 Sanitize Filenames: {effective_config.get('behavior', {}).get('sanitize_filenames', 'DEFAULT')}")
+        print(f"📏 Max Filename Length: {effective_config.get('behavior', {}).get('max_filename_length', 'DEFAULT')}")
+        
+        print("=" * 60)
+        
+    except Exception as e:
+        print(f"❌ Error loading configuration: {e}")
+
+
 def main():
     args = parse_args()
+    
+    # Handle --print-config flag
+    if args.print_config:
+        print_effective_config(args)
+        return
     
     # Step 1: Collect all URLs to process
     urls_to_process = []
@@ -517,7 +594,12 @@ def expand_url(url: str, max_videos: int = None, playlist_start: int = 1, playli
         if playlist_end:
             ydl_opts['playlistend'] = playlist_end
         if max_videos:
-            ydl_opts['playlistend'] = min(playlist_end or float('inf'), playlist_start + max_videos - 1)
+            # Fix: Ensure all-integer math to avoid type issues
+            calculated_end = playlist_start + max_videos - 1
+            if playlist_end is not None:
+                ydl_opts['playlistend'] = min(playlist_end, calculated_end)
+            else:
+                ydl_opts['playlistend'] = calculated_end
         
         from yt_dlp import YoutubeDL
         with YoutubeDL(ydl_opts) as ydl:

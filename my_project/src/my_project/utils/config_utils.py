@@ -37,6 +37,9 @@ def normalize_config(config: Dict[str, Any]) -> Dict[str, Any]:
     # Normalize video preferences  
     normalized = _normalize_video_preferences(normalized)
     
+    # Normalize transcript preferences
+    normalized = _normalize_transcript_preferences(normalized)
+    
     # Validate critical sections exist
     normalized = _ensure_quality_preferences_structure(normalized)
     
@@ -137,6 +140,42 @@ def _normalize_video_preferences(config: Dict[str, Any]) -> Dict[str, Any]:
             video_prefs["fallback_qualities"] = _generate_quality_fallbacks(current_quality)
         if "max_fallback_attempts" not in video_prefs:
             video_prefs["max_fallback_attempts"] = 3
+    
+    return config
+
+
+def _normalize_transcript_preferences(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize transcript configuration to handle schema mismatches."""
+    
+    # Check if transcripts section exists
+    transcripts = config.get("transcripts", {})
+    processing = transcripts.get("processing", {})
+    output_formats = processing.get("output_formats")
+    
+    if output_formats is not None:
+        # Handle both boolean dict structure and list structure
+        if isinstance(output_formats, dict):
+            # Convert boolean dict to list (current config format)
+            enabled_formats = [fmt for fmt, enabled in output_formats.items() if enabled]
+            logger.info(f"Converted transcript output_formats from dict to list: {enabled_formats}")
+            # Update the config to use list format for consistency
+            if "transcripts" not in config:
+                config["transcripts"] = {}
+            if "processing" not in config["transcripts"]:
+                config["transcripts"]["processing"] = {}
+            config["transcripts"]["processing"]["output_formats_list"] = enabled_formats
+        elif isinstance(output_formats, list):
+            # Already in list format, ensure backward compatibility
+            config["transcripts"]["processing"]["output_formats_list"] = output_formats
+            logger.debug("Transcript output_formats already in list format")
+    else:
+        # Set defaults if missing
+        if "transcripts" not in config:
+            config["transcripts"] = {}
+        if "processing" not in config["transcripts"]:
+            config["transcripts"]["processing"] = {}
+        config["transcripts"]["processing"]["output_formats_list"] = ["timestamped"]
+        logger.debug("Set default transcript output_formats_list")
     
     return config
 
