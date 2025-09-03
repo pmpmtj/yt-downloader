@@ -316,12 +316,8 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
                         # Use combined format with preferred language
                         print(f"📹 Using combined format: {selected_combined.get('format_id')} (language: {_fmt_audio_lang(selected_combined) or 'unknown'})")
                         
-                        from .yt_downloads_utils import download_video_with_audio_by_format
-                        if hasattr(__import__('my_project.yt_downloads_utils', fromlist=['download_video_with_audio_by_format']), 'download_video_with_audio_by_format'):
-                            success = download_video_with_audio_by_format(url, selected_combined.get('format_id'), filename)
-                        else:
-                            # Fallback to existing function with format override
-                            success = download_video_with_audio(url, args.quality or "720p", filename, format_override=selected_combined.get('format_id'))
+                        # Use existing function with format override
+                        success = download_video_with_audio(url, args.quality or "720p", filename, format_override=selected_combined.get('format_id'))
                     else:
                         # Try separate video+audio with language matching
                         video_fmt, audio_fmt = select_video_plus_audio_with_lang(formats, video_prefs, audio_prefs, preferred_langs)
