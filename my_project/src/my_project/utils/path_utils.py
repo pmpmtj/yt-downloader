@@ -113,6 +113,29 @@ def load_config(config_file: Union[str, Path] = None) -> Dict[str, Any]:
         raise ValueError(f"Invalid JSON in configuration file {config_path}: {e}")
 
 
+def load_normalized_config(config_file: Union[str, Path] = None) -> Dict[str, Any]:
+    """
+    Load and normalize application configuration from JSON file.
+    
+    This function handles schema mismatches and provides consistent configuration
+    access regardless of whether the user uses legacy downloads.* or modern
+    quality_preferences.* structure.
+    
+    Args:
+        config_file: Path to config file (defaults to app_config.json in project)
+    
+    Returns:
+        Normalized configuration dictionary
+    """
+    try:
+        # Import here to avoid circular imports
+        from .config_utils import load_and_normalize_config
+        return load_and_normalize_config(config_file)
+    except ImportError:
+        # Fallback to basic load_config if config_utils not available
+        return load_config(config_file)
+
+
 def get_downloads_directory(config: Optional[Dict[str, Any]] = None) -> Path:
     """
     Get the configured downloads directory.

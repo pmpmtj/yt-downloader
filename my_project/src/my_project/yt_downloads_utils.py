@@ -22,8 +22,8 @@ def get_filename_template(save_path: Optional[str] = None) -> str:
         return save_path
     
     try:
-        from .utils.path_utils import load_config
-        config = load_config()
+        from .utils.path_utils import load_normalized_config
+        config = load_normalized_config()
         template = config.get("downloads", {}).get("filename_template", "%(title)s [%(id)s].%(ext)s")
         logger.debug(f"Using filename template from config: {template}")
         return template
@@ -220,8 +220,8 @@ def download_transcript(video_id: str, language_code: str, save_path: Optional[s
 
             # Process transcript with new enhanced processor
             try:
-                from .utils.path_utils import load_config
-                config = load_config()
+                from .utils.path_utils import load_normalized_config
+                config = load_normalized_config()
             except Exception as e:
                 logger.warning(f"Could not load config for transcript processing: {e}")
                 config = {}

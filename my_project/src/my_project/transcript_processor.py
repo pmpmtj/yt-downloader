@@ -25,7 +25,7 @@ class TranscriptProcessor:
         """Initialize processor with configuration."""
         if config is None:
             try:
-                config = load_config()
+                config = load_normalized_config()
             except Exception as e:
                 logger.warning(f"Could not load config, using defaults: {e}")
                 config = {}
@@ -235,8 +235,8 @@ class TranscriptProcessor:
         
         # 🆕 Add comprehensive metadata collection if enabled
         try:
-            from .utils.path_utils import load_config
-            config = load_config()
+            from .utils.path_utils import load_normalized_config
+            config = load_normalized_config()
             
             if config.get("metadata_collection", {}).get("enabled", True):
                 from .metadata_collector import collect_comprehensive_metadata

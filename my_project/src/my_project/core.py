@@ -231,8 +231,8 @@ def select_default_audio(formats: List[Dict[str, Any]], preferences: Optional[Di
     # Load preferences from config if not provided
     if preferences is None:
         try:
-            from .utils.path_utils import load_config
-            config = load_config()
+            from .utils.path_utils import load_normalized_config
+            config = load_normalized_config()
             preferences = config.get("quality_preferences", {}).get("audio", {})
         except Exception as e:
             logger.warning(f"Could not load audio preferences: {e}")
@@ -265,8 +265,8 @@ def select_default_video(formats: List[Dict[str, Any]], preferences: Optional[Di
     # Load preferences from config if not provided
     if preferences is None:
         try:
-            from .utils.path_utils import load_config
-            config = load_config()
+            from .utils.path_utils import load_normalized_config
+            config = load_normalized_config()
             preferences = config.get("quality_preferences", {}).get("video", {})
         except Exception as e:
             logger.warning(f"Could not load video preferences: {e}")
@@ -301,8 +301,8 @@ def select_combined_video_audio(formats: List[Dict[str, Any]], preferences: Opti
     # Load preferences from config if not provided
     if preferences is None:
         try:
-            from .utils.path_utils import load_config
-            config = load_config()
+            from .utils.path_utils import load_normalized_config
+            config = load_normalized_config()
             preferences = config.get("quality_preferences", {}).get("video", {})
         except Exception as e:
             logger.warning(f"Could not load video preferences: {e}")
@@ -374,8 +374,8 @@ def print_and_select_default_transcript(video_id: str, preferred_language: Optio
     # If no preferred language provided, check config for default preference
     if not preferred_language:
         try:
-            from .utils.path_utils import load_config
-            config = load_config()
+            from .utils.path_utils import load_normalized_config
+            config = load_normalized_config()
             config_languages = config.get("transcripts", {}).get("preferred_languages", [])
             if config_languages:
                 preferred_language = config_languages[0]  # Use first preferred language from config
@@ -522,9 +522,9 @@ def preview_transcript(video_id: str, language_code: str = None, include_metadat
         if include_metadata:
             try:
                 from .metadata_collector import MetadataCollector
-                from .utils.path_utils import load_config
+                from .utils.path_utils import load_normalized_config
                 
-                config = load_config()
+                config = load_normalized_config()
                 if config.get("metadata_collection", {}).get("enabled", True):
                     collector = MetadataCollector(config)
                     

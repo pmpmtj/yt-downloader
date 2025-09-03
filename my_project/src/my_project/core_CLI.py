@@ -50,8 +50,8 @@ def download_audio_with_fallback(url: str, audio_formats: list, save_path: str, 
     from .core import smart_audio_selection
     
     try:
-        from .utils.path_utils import load_config
-        config = load_config()
+        from .utils.path_utils import load_normalized_config
+        config = load_normalized_config()
         audio_prefs = config.get("quality_preferences", {}).get("audio", {})
         network_config = config.get("network", {})
         max_retries = network_config.get("max_retries", 3)
@@ -91,8 +91,8 @@ def download_video_with_fallback(url: str, video_formats: list, save_path: str, 
     from .core import smart_video_selection
     
     try:
-        from .utils.path_utils import load_config
-        config = load_config()
+        from .utils.path_utils import load_normalized_config
+        config = load_normalized_config()
         video_prefs = config.get("quality_preferences", {}).get("video", {})
         network_config = config.get("network", {})
         max_retries = network_config.get("max_retries", 3)
@@ -279,8 +279,8 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
                 else:
                     # Default to all formats when using new system
                     try:
-                        from .utils.path_utils import load_config
-                        config = load_config()
+                        from .utils.path_utils import load_normalized_config
+                        config = load_normalized_config()
                         format_config = config.get("transcripts", {}).get("processing", {}).get("output_formats", {})
                         transcript_formats = [fmt for fmt, enabled in format_config.items() if enabled]
                         if not transcript_formats:
@@ -292,8 +292,8 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
                 print(f"Base path: {base_transcript_path}")
                 
                 try:
-                    from .utils.path_utils import load_config
-                    config = load_config()
+                    from .utils.path_utils import load_normalized_config
+                    config = load_normalized_config()
                     network_config = config.get("network", {})
                     max_retries = network_config.get("max_retries", 3)
                     retry_delay = network_config.get("retry_delay_seconds", 2)
@@ -328,11 +328,11 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
             try:
                 from .metadata_exporter import export_metadata
                 from .metadata_collector import collect_comprehensive_metadata
-                from .utils.path_utils import load_config
+                from .utils.path_utils import load_normalized_config
                 from pathlib import Path
                 from youtube_transcript_api import YouTubeTranscriptApi
                 
-                config = load_config()
+                config = load_normalized_config()
                 if config.get("metadata_collection", {}).get("enabled", True):
                     print(f"📊 Exporting metadata to {args.metadata_export} format...")
                     

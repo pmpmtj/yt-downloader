@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Import logging
 from .logger_utils.logger_utils import setup_logger
-from .utils.path_utils import load_config
+from .utils.path_utils import load_normalized_config
 
 # Setup logger for this module
 logger = setup_logger("metadata_collector")
@@ -27,7 +27,7 @@ class MetadataCollector:
         """Initialize metadata collector with configuration."""
         if config is None:
             try:
-                config = load_config()
+                config = load_normalized_config()
             except Exception as e:
                 logger.warning(f"Could not load config, using defaults: {e}")
                 config = {}
