@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS platform_users (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Seed anonymous (donâ€™t pass id to avoid UUID/bigint mismatch)
+-- Seed anonymous (donÃ¢â‚¬â„¢t pass id to avoid UUID/bigint mismatch)
 INSERT INTO platform_users (email, is_anonymous)
 VALUES ('anonymous@localhost', TRUE)
 ON CONFLICT (email) DO NOTHING;
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE INDEX IF NOT EXISTS idx_jobs_user ON jobs(user_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 
--- Videos (deâ€‘dup per user by YouTube ID)
+-- Videos (deÃ¢â‚¬â€˜dup per user by YouTube ID)
 CREATE TABLE IF NOT EXISTS videos (
     video_uuid  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id     UUID NOT NULL REFERENCES platform_users(id),
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS media_files (
     video_uuid  UUID NOT NULL REFERENCES videos(video_uuid),
     kind        media_kind NOT NULL,
     language_code TEXT,              -- e.g., 'en', 'pt-PT'
-    path        TEXT NOT NULL,       -- absolute or projectâ€‘relative
+    path        TEXT NOT NULL,       -- absolute or projectÃ¢â‚¬â€˜relative
     filename    TEXT NOT NULL,
     ext         TEXT NOT NULL,       -- 'mp4','mp3','txt','json'
     size_bytes  BIGINT,
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS format_selection (
     user_id         UUID NOT NULL REFERENCES platform_users(id),
     video_uuid      UUID NOT NULL REFERENCES videos(video_uuid),
     selection_kind  TEXT NOT NULL,      -- 'audio','video','merged', etc.
-    chosen_format_id TEXT,              -- ytâ€‘dlp's format id
+    chosen_format_id TEXT,              -- ytÃ¢â‚¬â€˜dlp's format id
     quality_score   NUMERIC(6,3),
     format_score    NUMERIC(6,3),
     size_score      NUMERIC(6,3),
@@ -133,10 +133,10 @@ CREATE TABLE IF NOT EXISTS transcripts (
 );
 CREATE INDEX IF NOT EXISTS idx_transcripts_user ON transcripts(user_id);
 CREATE INDEX IF NOT EXISTS idx_transcripts_video ON transcripts(video_uuid);
--- Lightweight fullâ€‘text search on summaries
+-- Lightweight fullÃ¢â‚¬â€˜text search on summaries
 CREATE INDEX IF NOT EXISTS idx_transcripts_summary_fts ON transcripts USING GIN (to_tsvector('simple', COALESCE(summary,'')));
 
--- Optional housekeeping: autoâ€‘update jobs.updated_at (trigger)
+-- Optional housekeeping: autoÃ¢â‚¬â€˜update jobs.updated_at (trigger)
 CREATE OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER AS $func$
 BEGIN
   NEW.updated_at = NOW();

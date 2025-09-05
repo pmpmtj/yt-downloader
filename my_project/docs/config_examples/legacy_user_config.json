@@ -1,0 +1,23 @@
+{
+  "comment": "❌ BEFORE FIX: This intuitive config would be silently ignored",
+  "downloads": {
+    "base_directory": "my_youtube_downloads",
+    "audio": {
+      "format": "mp3",
+      "quality": "192"
+    },
+    "video": {
+      "format": "mp4", 
+      "quality": "720p"
+    }
+  },
+  "network": {
+    "max_retries": 5,
+    "timeout_seconds": 60
+  },
+  "problem": {
+    "description": "User expects this to work, but code looks for 'quality_preferences.audio.*'",
+    "result": "Configuration silently ignored, falls back to hardcoded defaults",
+    "user_frustration": "Why isn't my preferred MP3 format being used?"
+  }
+}

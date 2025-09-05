@@ -75,11 +75,11 @@ def download_audio_with_fallback(url: str, audio_formats: list, save_path: str, 
             selected_format = smart_audio_selection(remaining_formats, audio_prefs)
             
             if not selected_format:
-                print(f"ðŸ”„ No more audio formats to try (attempt {attempt + 1})")
+                print(f"Ã°Å¸â€â€ž No more audio formats to try (attempt {attempt + 1})")
                 continue
                 
             format_id = selected_format.get("format_id")
-            print(f"ðŸ”„ Audio format attempt {attempt + 1}: {format_id} - {selected_format.get('format_note')}")
+            print(f"Ã°Å¸â€â€ž Audio format attempt {attempt + 1}: {format_id} - {selected_format.get('format_note')}")
             
             # Try download with this format
             success = download_audio(url, format_id, save_path, max_retries, retry_delay)
@@ -87,7 +87,7 @@ def download_audio_with_fallback(url: str, audio_formats: list, save_path: str, 
                 return True
                 
         except Exception as e:
-            print(f"âŒ Audio format {attempt + 1} failed: {str(e)}")
+            print(f"Ã¢ÂÅ’ Audio format {attempt + 1} failed: {str(e)}")
             continue
     
     return False
@@ -116,11 +116,11 @@ def download_video_with_fallback(url: str, video_formats: list, save_path: str, 
             selected_format = smart_video_selection(remaining_formats, video_prefs)
             
             if not selected_format:
-                print(f"ðŸ”„ No more video formats to try (attempt {attempt + 1})")
+                print(f"Ã°Å¸â€â€ž No more video formats to try (attempt {attempt + 1})")
                 continue
                 
             format_id = selected_format.get("format_id")
-            print(f"ðŸ”„ Video format attempt {attempt + 1}: {format_id} - {selected_format.get('format_note')} - {selected_format.get('height')}p")
+            print(f"Ã°Å¸â€â€ž Video format attempt {attempt + 1}: {format_id} - {selected_format.get('format_note')} - {selected_format.get('height')}p")
             
             # Try download with this format
             success = download_video(url, format_id, save_path, max_retries, retry_delay)
@@ -128,14 +128,14 @@ def download_video_with_fallback(url: str, video_formats: list, save_path: str, 
                 return True
                 
         except Exception as e:
-            print(f"âŒ Video format {attempt + 1} failed: {str(e)}")
+            print(f"Ã¢ÂÅ’ Video format {attempt + 1} failed: {str(e)}")
             continue
     
     return False
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(
-        description="YouTube Downloader CLI â€” select language, quality, media types"
+        description="YouTube Downloader CLI Ã¢â‚¬â€ select language, quality, media types"
     )
 
     parser.add_argument("urls", nargs="*", help="YouTube video URL(s) or playlist URL(s) to process")
@@ -174,7 +174,7 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
         print(f"Processing: {url}")
         print(f"{'='*60}")
         
-        # ðŸ†• Use database-aware download manager for logging
+        # Ã°Å¸â€ â€¢ Use database-aware download manager for logging
         from .download_manager import get_download_manager
         download_manager = get_download_manager()
         
@@ -203,11 +203,11 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
             return process_info_only_mode(url, session_uuid, base_downloads_dir, args)
         
         # Use database-aware download for actual downloads
-        logger.info(f"ðŸ”„ Starting database-aware download for {url}")
+        logger.info(f"Ã°Å¸â€â€ž Starting database-aware download for {url}")
         return download_manager.run_download_with_db(url, session_uuid, base_downloads_dir, args_dict)
         
     except Exception as e:
-        print(f"ðŸ’¥ Error processing video {url}: {str(e)}")
+        print(f"Ã°Å¸â€™Â¥ Error processing video {url}: {str(e)}")
         logger.error(f"Error processing video {url}: {str(e)}")
         return {"status": "error", "url": url, "error": str(e)}
 
@@ -218,7 +218,7 @@ def process_info_only_mode(url: str, session_uuid: str, base_downloads_dir: str,
         # Step 1: Fetch video info
         info = get_video_info(url)
         if info is None:
-            print("âŒ Failed to extract video information. Video may be private, deleted, or URL is invalid.")
+            print("Ã¢ÂÅ’ Failed to extract video information. Video may be private, deleted, or URL is invalid.")
             return {"status": "error", "error": "Failed to extract video info", "video_id": None, "title": None}
         
         print_basic_info(info)
@@ -275,7 +275,7 @@ def process_info_only_mode(url: str, session_uuid: str, base_downloads_dir: str,
         return {"status": "info_only", "video_id": info.get("id"), "title": info.get("title")}
 
     except Exception as e:
-        print(f"ðŸ’¥ Error processing video {url}: {str(e)}")
+        print(f"Ã°Å¸â€™Â¥ Error processing video {url}: {str(e)}")
         return {"status": "error", "url": url, "error": str(e)}
 
 
@@ -294,7 +294,7 @@ def print_effective_config(args):
         
         # Show quality overrides
         if hasattr(args, 'quality') and args.quality:
-            print(f"\nðŸ”§ CLI Override: --quality {args.quality}")
+            print(f"\nÃ°Å¸â€Â§ CLI Override: --quality {args.quality}")
             if "quality_preferences" not in effective_config:
                 effective_config["quality_preferences"] = {}
             if "video" not in effective_config["quality_preferences"]:
@@ -307,7 +307,7 @@ def print_effective_config(args):
         
         # Show transcript formats overrides
         if hasattr(args, 'transcript_formats') and args.transcript_formats:
-            print(f"\nðŸ”§ CLI Override: --transcript-formats {args.transcript_formats}")
+            print(f"\nÃ°Å¸â€Â§ CLI Override: --transcript-formats {args.transcript_formats}")
             if "transcripts" not in effective_config:
                 effective_config["transcripts"] = {}
             if "processing" not in effective_config["transcripts"]:
@@ -316,7 +316,7 @@ def print_effective_config(args):
         
         # Show audio language overrides
         if hasattr(args, 'audio_lang') and args.audio_lang:
-            print(f"\nðŸ”§ CLI Override: --audio-lang {args.audio_lang}")
+            print(f"\nÃ°Å¸â€Â§ CLI Override: --audio-lang {args.audio_lang}")
             if "quality_preferences" not in effective_config:
                 effective_config["quality_preferences"] = {}
             if "audio" not in effective_config["quality_preferences"]:
@@ -324,7 +324,7 @@ def print_effective_config(args):
             effective_config["quality_preferences"]["audio"]["preferred_languages"] = args.audio_lang
         
         if hasattr(args, 'require_audio_lang') and args.require_audio_lang:
-            print(f"\nðŸ”§ CLI Override: --require-audio-lang")
+            print(f"\nÃ°Å¸â€Â§ CLI Override: --require-audio-lang")
             if "quality_preferences" not in effective_config:
                 effective_config["quality_preferences"] = {}
             if "audio" not in effective_config["quality_preferences"]:
@@ -333,12 +333,12 @@ def print_effective_config(args):
         
         # Show output directory override
         if hasattr(args, 'outdir') and args.outdir and args.outdir != ".":
-            print(f"\nðŸ”§ CLI Override: --outdir {args.outdir}")
+            print(f"\nÃ°Å¸â€Â§ CLI Override: --outdir {args.outdir}")
             effective_config["downloads"]["base_directory"] = args.outdir
         
         # Pretty print the effective configuration
         import json
-        print("\nðŸ“‹ Configuration JSON:")
+        print("\nÃ°Å¸â€œâ€¹ Configuration JSON:")
         print(json.dumps(effective_config, indent=2, ensure_ascii=False))
         
         # Show key selections that will be used
@@ -350,19 +350,19 @@ def print_effective_config(args):
         audio_prefs = effective_config.get("quality_preferences", {}).get("audio", {})
         transcript_prefs = effective_config.get("transcripts", {}).get("processing", {})
         
-        print(f"ðŸ“¹ Video Quality: {video_prefs.get('preferred_quality', 'DEFAULT')}")
-        print(f"ðŸŽµ Audio Quality: {audio_prefs.get('preferred_quality', 'DEFAULT')}")
-        print(f"ðŸŽµ Audio Languages: {audio_prefs.get('preferred_languages', ['DEFAULT'])}")
-        print(f"ðŸ”’ Require Audio Language: {audio_prefs.get('require_language_match', 'DEFAULT')}")
-        print(f"ðŸ“ Transcript Formats: {transcript_prefs.get('output_formats_list', ['DEFAULT'])}")
-        print(f"ðŸ“ Output Directory: {effective_config.get('downloads', {}).get('base_directory', 'DEFAULT')}")
-        print(f"ðŸ”§ Sanitize Filenames: {effective_config.get('behavior', {}).get('sanitize_filenames', 'DEFAULT')}")
-        print(f"ðŸ“ Max Filename Length: {effective_config.get('behavior', {}).get('max_filename_length', 'DEFAULT')}")
+        print(f"Ã°Å¸â€œÂ¹ Video Quality: {video_prefs.get('preferred_quality', 'DEFAULT')}")
+        print(f"Ã°Å¸Å½Âµ Audio Quality: {audio_prefs.get('preferred_quality', 'DEFAULT')}")
+        print(f"Ã°Å¸Å½Âµ Audio Languages: {audio_prefs.get('preferred_languages', ['DEFAULT'])}")
+        print(f"Ã°Å¸â€â€™ Require Audio Language: {audio_prefs.get('require_language_match', 'DEFAULT')}")
+        print(f"Ã°Å¸â€œÂ Transcript Formats: {transcript_prefs.get('output_formats_list', ['DEFAULT'])}")
+        print(f"Ã°Å¸â€œÂ Output Directory: {effective_config.get('downloads', {}).get('base_directory', 'DEFAULT')}")
+        print(f"Ã°Å¸â€Â§ Sanitize Filenames: {effective_config.get('behavior', {}).get('sanitize_filenames', 'DEFAULT')}")
+        print(f"Ã°Å¸â€œÂ Max Filename Length: {effective_config.get('behavior', {}).get('max_filename_length', 'DEFAULT')}")
         
         print("=" * 60)
         
     except Exception as e:
-        print(f"âŒ Error loading configuration: {e}")
+        print(f"Ã¢ÂÅ’ Error loading configuration: {e}")
 
 
 def main():
@@ -385,13 +385,13 @@ def main():
             with open(args.batch_file, 'r', encoding='utf-8') as f:
                 batch_urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
                 urls_to_process.extend(batch_urls)
-                print(f"ðŸ“ Loaded {len(batch_urls)} URLs from batch file: {args.batch_file}")
+                print(f"Ã°Å¸â€œÂ Loaded {len(batch_urls)} URLs from batch file: {args.batch_file}")
         except Exception as e:
-            print(f"âŒ Error reading batch file {args.batch_file}: {str(e)}")
+            print(f"Ã¢ÂÅ’ Error reading batch file {args.batch_file}: {str(e)}")
             return
     
     if not urls_to_process:
-        print("âŒ No URLs provided to process")
+        print("Ã¢ÂÅ’ No URLs provided to process")
         return
     
     # Step 2: Expand playlists and validate URLs
@@ -401,10 +401,10 @@ def main():
             expanded = expand_url(url, args.max_videos, args.playlist_start, args.playlist_end)
             expanded_urls.extend(expanded)
         except Exception as e:
-            print(f"âš ï¸ Error expanding URL {url}: {str(e)}")
+            print(f"Ã¢Å¡Â Ã¯Â¸Â Error expanding URL {url}: {str(e)}")
             expanded_urls.append(url)  # Add as-is if expansion fails
     
-    print(f"\nðŸŽ¯ Total videos to process: {len(expanded_urls)}")
+    print(f"\nÃ°Å¸Å½Â¯ Total videos to process: {len(expanded_urls)}")
     
     # Step 3: Generate session UUID and determine output directory
     session_uuid = generate_session_uuid()
@@ -423,7 +423,7 @@ def main():
     total_processed = 0
     
     for i, url in enumerate(expanded_urls, 1):
-        print(f"\nðŸŽ¬ Processing video {i}/{len(expanded_urls)}")
+        print(f"\nÃ°Å¸Å½Â¬ Processing video {i}/{len(expanded_urls)}")
         result = process_single_video(url, session_uuid, base_downloads_dir, args)
         all_results.append(result)
         
@@ -433,23 +433,23 @@ def main():
     
     # Step 5: Final summary
     print(f"\n{'='*80}")
-    print(f"ðŸŽ¯ BATCH PROCESSING COMPLETE")
+    print(f"Ã°Å¸Å½Â¯ BATCH PROCESSING COMPLETE")
     print(f"{'='*80}")
-    print(f"ðŸ“Š Overall Summary:")
-    print(f"   â€¢ Videos processed: {len([r for r in all_results if r.get('status') in ['processed', 'info_only']])}/{len(expanded_urls)}")
-    print(f"   â€¢ Downloads successful: {total_success}/{total_processed}")
-    print(f"   â€¢ Session UUID: {session_uuid}")
-    print(f"   â€¢ Base directory: {base_downloads_dir}")
+    print(f"Ã°Å¸â€œÅ  Overall Summary:")
+    print(f"   Ã¢â‚¬Â¢ Videos processed: {len([r for r in all_results if r.get('status') in ['processed', 'info_only']])}/{len(expanded_urls)}")
+    print(f"   Ã¢â‚¬Â¢ Downloads successful: {total_success}/{total_processed}")
+    print(f"   Ã¢â‚¬Â¢ Session UUID: {session_uuid}")
+    print(f"   Ã¢â‚¬Â¢ Base directory: {base_downloads_dir}")
     
     # Show failed videos if any
     failed_videos = [r for r in all_results if r.get("status") == "error"]
     if failed_videos:
-        print(f"\nâŒ Failed videos ({len(failed_videos)}):")
+        print(f"\nÃ¢ÂÅ’ Failed videos ({len(failed_videos)}):")
         for failure in failed_videos:
-            print(f"   â€¢ {failure.get('url')}: {failure.get('error')}")
+            print(f"   Ã¢â‚¬Â¢ {failure.get('url')}: {failure.get('error')}")
     
-    print(f"\nâœ… Batch processing completed!")
-    print(f"ðŸ“ Structure: {base_downloads_dir}/{session_uuid}/[video_uuids]/[audio|video|transcripts]/")
+    print(f"\nÃ¢Å“â€¦ Batch processing completed!")
+    print(f"Ã°Å¸â€œÂ Structure: {base_downloads_dir}/{session_uuid}/[video_uuids]/[audio|video|transcripts]/")
 
 
 def expand_url(url: str, max_videos: int = None, playlist_start: int = 1, playlist_end: int = None) -> list:
@@ -484,9 +484,9 @@ def expand_url(url: str, max_videos: int = None, playlist_start: int = 1, playli
                 entries = info['entries']
                 urls = []
                 
-                print(f"ðŸ“‹ Detected playlist: {info.get('title', 'Unknown playlist')}")
-                print(f"   â€¢ Total videos: {len(entries)}")
-                print(f"   â€¢ Processing range: {playlist_start} to {min(len(entries), playlist_end or len(entries))}")
+                print(f"Ã°Å¸â€œâ€¹ Detected playlist: {info.get('title', 'Unknown playlist')}")
+                print(f"   Ã¢â‚¬Â¢ Total videos: {len(entries)}")
+                print(f"   Ã¢â‚¬Â¢ Processing range: {playlist_start} to {min(len(entries), playlist_end or len(entries))}")
                 
                 for entry in entries:
                     if entry and entry.get('url'):
@@ -494,14 +494,14 @@ def expand_url(url: str, max_videos: int = None, playlist_start: int = 1, playli
                     elif entry and entry.get('id'):
                         urls.append(f"https://www.youtube.com/watch?v={entry['id']}")
                 
-                print(f"   â€¢ Expanded to {len(urls)} video URLs")
+                print(f"   Ã¢â‚¬Â¢ Expanded to {len(urls)} video URLs")
                 return urls
             else:
                 # Single video
                 return [url]
                 
     except Exception as e:
-        print(f"âš ï¸ Could not expand URL {url}: {str(e)}")
+        print(f"Ã¢Å¡Â Ã¯Â¸Â Could not expand URL {url}: {str(e)}")
         return [url]  # Return as-is if expansion fails
 
 

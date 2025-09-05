@@ -23,8 +23,7 @@ from .yt_downloads_utils import (
     download_transcript, get_filename_template
 )
 from .utils.path_utils import (
-    create_download_structure, load_normalized_config,
-    generate_video_uuid
+    create_download_structure, load_normalized_config
 )
 
 # Import database functionality
@@ -62,6 +61,32 @@ class DownloadManager:
         except Exception as e:
             logger.warning(f"[DB WARN] {operation_name}: {e}")
             return None
+    
+    def check_existing_media_file(self, user_id: str, video_uuid: str, kind: str, 
+                                 language_code: Optional[str], ext: str) -> Optional[Dict]:
+        """Check if a media file of the same variant already exists in the database."""
+        return self.safe_db_operation("check_existing_media_file", self.db.check_existing_media_file,
+                                     user_id, video_uuid, kind, language_code, ext)
+    
+    def verify_file_exists(self, file_path: str) -> bool:
+        """Verify that a file still exists on disk and is readable."""
+        try:
+            path_obj = Path(file_path)
+            if not path_obj.exists():
+                logger.debug(f"[DEDUP] File does not exist on disk: {file_path}")
+                return False
+            
+            # Check if file is readable and has content
+            if path_obj.stat().st_size == 0:
+                logger.debug(f"[DEDUP] File is empty: {file_path}")
+                return False
+                
+            logger.debug(f"[DEDUP] File exists and is valid: {file_path}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"[DEDUP] Error verifying file: {file_path} - {str(e)}")
+            return False
     
     def run_download_with_db(self, url: str, session_uuid: str, base_downloads_dir: str, 
                            download_config: Dict[str, Any]) -> Dict[str, Any]:
@@ -137,9 +162,9 @@ class DownloadManager:
             self.safe_db_operation("log_event", self.db.log_event, 
                                  uid, vid, jid, 'INFO_FETCHED', {'id': info['id']})
             
-            # Step 3: Generate video UUID and setup directories
-            video_uuid = generate_video_uuid()
-            logger.debug(f"Generated video UUID: {video_uuid}")
+            # Step 3: Use video UUID from database (for proper deduplication)
+            video_uuid = vid  # Use the video_uuid returned by upsert_video for deduplication
+            logger.debug(f"Using video UUID from database: {video_uuid}")
             
             # Step 4: Process downloads
             results = self._process_downloads(
@@ -200,15 +225,15 @@ class DownloadManager:
             try:
                 success = self._download_audio_with_db(
                     url, formats, video_uuid, session_uuid, base_downloads_dir, 
-                    args, uid, vid, jid
+                    args, uid, vid, jid, info
                 )
                 if success:
                     success_count += 1
-                    logger.info("âœ… Audio download completed successfully")
+                    logger.info("Ã¢Å“â€¦ Audio download completed successfully")
                 else:
-                    logger.warning("âŒ Audio download failed")
+                    logger.warning("Ã¢ÂÅ’ Audio download failed")
             except Exception as e:
-                logger.error(f"ðŸ’¥ Audio download error: {str(e)}")
+                logger.error(f"Ã°Å¸â€™Â¥ Audio download error: {str(e)}")
         
         # Process video-only download
         if args.get('video_only'):
@@ -216,15 +241,15 @@ class DownloadManager:
             try:
                 success = self._download_video_with_db(
                     url, formats, video_uuid, session_uuid, base_downloads_dir,
-                    args, uid, vid, jid
+                    args, uid, vid, jid, info
                 )
                 if success:
                     success_count += 1
-                    logger.info("âœ… Video download completed successfully")
+                    logger.info("Ã¢Å“â€¦ Video download completed successfully")
                 else:
-                    logger.warning("âŒ Video download failed")
+                    logger.warning("Ã¢ÂÅ’ Video download failed")
             except Exception as e:
-                logger.error(f"ðŸ’¥ Video download error: {str(e)}")
+                logger.error(f"Ã°Å¸â€™Â¥ Video download error: {str(e)}")
         
         # Process video+audio download  
         if args.get('video_with_audio'):
@@ -232,15 +257,15 @@ class DownloadManager:
             try:
                 success = self._download_video_audio_with_db(
                     url, formats, video_uuid, session_uuid, base_downloads_dir,
-                    args, uid, vid, jid
+                    args, uid, vid, jid, info
                 )
                 if success:
                     success_count += 1
-                    logger.info("âœ… Video+audio download completed successfully") 
+                    logger.info("Ã¢Å“â€¦ Video+audio download completed successfully") 
                 else:
-                    logger.warning("âŒ Video+audio download failed")
+                    logger.warning("Ã¢ÂÅ’ Video+audio download failed")
             except Exception as e:
-                logger.error(f"ðŸ’¥ Video+audio download error: {str(e)}")
+                logger.error(f"Ã°Å¸â€™Â¥ Video+audio download error: {str(e)}")
         
         # Process transcript download
         if args.get('transcript'):
@@ -252,19 +277,19 @@ class DownloadManager:
                 )
                 if success:
                     success_count += 1
-                    logger.info("âœ… Transcript download completed successfully")
+                    logger.info("Ã¢Å“â€¦ Transcript download completed successfully")
                 else:
-                    logger.warning("âŒ Transcript download failed")
+                    logger.warning("Ã¢ÂÅ’ Transcript download failed")
             except Exception as e:
-                logger.error(f"ðŸ’¥ Transcript download error: {str(e)}")
+                logger.error(f"Ã°Å¸â€™Â¥ Transcript download error: {str(e)}")
         
         results["success_count"] = success_count
-        logger.info(f"ðŸ“Š Downloads completed: {success_count}/{total_requested}")
+        logger.info(f"Ã°Å¸â€œÅ  Downloads completed: {success_count}/{total_requested}")
         return results
     
     def _download_audio_with_db(self, url: str, formats: List, video_uuid: str, 
                                session_uuid: str, base_downloads_dir: str, 
-                               args: Dict, uid, vid, jid) -> bool:
+                               args: Dict, uid, vid, jid, info: Dict) -> bool:
         """Download audio with database logging."""
         logger.debug("Starting audio download with database integration")
         
@@ -282,12 +307,58 @@ class DownloadManager:
         self.safe_db_operation("record_format_selection", self.db.record_format_selection,
                              uid, vid, 'audio', default_audio.get('format_id'), format_scores, format_prefs)
         
+        # Check for existing media file before downloading
+        ext = default_audio.get('ext', 'mp3')
+        existing_file = self.check_existing_media_file(uid, vid, 'audio', None, ext)
+        
+        if existing_file:
+            logger.info(f"[DEDUP] Found existing audio file in database: {existing_file['filename']}")
+            if self.verify_file_exists(existing_file['path']):
+                logger.info(f"[DEDUP] âœ… Skipping audio download - file already exists: {existing_file['path']}")
+                # Log the skip event
+                self.safe_db_operation("log_event", self.db.log_event,
+                                     uid, vid, jid, 'DOWNLOAD_SKIPPED',
+                                     {'reason': 'duplicate_exists', 'existing_file_id': existing_file['id'], 
+                                      'path': existing_file['path'], 'type': 'audio'})
+                return True  # Return success since we have the file
+            else:
+                logger.warning(f"[DEDUP] âš ï¸ Database has existing record but file not found at old path: {existing_file['path']}")
+                
+                # Check if we can find the file anywhere in the downloads directory using the filename
+                base_downloads = Path(base_downloads_dir)
+                search_pattern = f"**/{existing_file['filename']}"
+                matching_files = list(base_downloads.glob(search_pattern))
+                
+                if matching_files:
+                    # Found the file in another location
+                    found_file = matching_files[0]  # Use the first match
+                    logger.info(f"[DEDUP] âœ… Found existing file in different location: {found_file}")
+                    logger.info(f"[DEDUP] âœ… Skipping audio download - file already exists elsewhere")
+                    
+                    # Log the skip event with the found path
+                    self.safe_db_operation("log_event", self.db.log_event,
+                                         uid, vid, jid, 'DOWNLOAD_SKIPPED',
+                                         {'reason': 'duplicate_exists_different_path', 'existing_file_id': existing_file['id'], 
+                                          'old_path': existing_file['path'], 'found_path': str(found_file), 'type': 'audio'})
+                    return True  # Return success since we have the file
+                else:
+                    logger.warning(f"[DEDUP] âš ï¸ File not found anywhere in downloads directory - proceeding with download")
+                    # Continue with download since file is truly missing
+        
         # Setup download path
         audio_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "audio")
         template = get_filename_template()
-        filename = str(audio_dir / template)
+        
+        # Render filename template with actual video info
+        title = info.get('title', 'video')
+        vid_id = info.get('id', '')
+        rendered_filename = template.replace('%(title)s', title).replace('%(id)s', vid_id).replace('%(ext)s', ext)
+        filename = str(audio_dir / rendered_filename)
         
         logger.debug(f"Audio download path: {filename}")
+        logger.debug(f"[FILENAME-DEBUG] Template: {template}")
+        logger.debug(f"[FILENAME-DEBUG] Rendered: {rendered_filename}")
+        logger.debug(f"[FILENAME-DEBUG] Full path: {filename}")
         
         # Perform download
         try:
@@ -297,18 +368,25 @@ class DownloadManager:
             if success:
                 # Record successful download in database
                 file_path = Path(filename)
+                logger.debug(f"[MEDIAFILE-DEBUG] Checking file existence: {file_path}")
+                logger.debug(f"[MEDIAFILE-DEBUG] File exists: {file_path.exists()}")
+                
                 if file_path.exists():
                     file_size = file_path.stat().st_size
                     file_name = file_path.name
                     
+                    logger.debug(f"[MEDIAFILE-DEBUG] Registering media_file: user_id={uid}, video_uuid={vid}, kind=audio, path={str(file_path)}, filename={file_name}, ext={default_audio.get('ext', 'unknown')}, size_bytes={file_size}")
                     mid = self.safe_db_operation("record_media_file", self.db.record_media_file,
                                                uid, vid, 'audio', None, str(file_path), file_name, 
                                                default_audio.get('ext', 'unknown'), file_size)
+                    logger.debug(f"[MEDIAFILE-DEBUG] record_media_file returned id: {mid}")
                     
                     self.safe_db_operation("log_event", self.db.log_event,
                                          uid, vid, jid, 'DOWNLOAD_COMPLETED', 
                                          {'path': str(file_path), 'type': 'audio', 'format_id': default_audio.get('format_id')})
                     logger.debug(f"Audio download logged in database: {file_path}")
+                else:
+                    logger.warning(f"[MEDIAFILE-DEBUG] File does not exist after download: {file_path}")
             
             return success
             
@@ -321,7 +399,7 @@ class DownloadManager:
     
     def _download_video_with_db(self, url: str, formats: List, video_uuid: str,
                                session_uuid: str, base_downloads_dir: str,
-                               args: Dict, uid, vid, jid) -> bool:
+                               args: Dict, uid, vid, jid, info: Dict) -> bool:
         """Download video-only with database logging."""
         logger.debug("Starting video-only download with database integration")
         
@@ -339,12 +417,58 @@ class DownloadManager:
         self.safe_db_operation("record_format_selection", self.db.record_format_selection,
                              uid, vid, 'video', default_video.get('format_id'), format_scores, format_prefs)
         
+        # Check for existing media file before downloading
+        ext = default_video.get('ext', 'mp4')
+        existing_file = self.check_existing_media_file(uid, vid, 'video', None, ext)
+        
+        if existing_file:
+            logger.info(f"[DEDUP] Found existing video file in database: {existing_file['filename']}")
+            if self.verify_file_exists(existing_file['path']):
+                logger.info(f"[DEDUP] âœ… Skipping video download - file already exists: {existing_file['path']}")
+                # Log the skip event
+                self.safe_db_operation("log_event", self.db.log_event,
+                                     uid, vid, jid, 'DOWNLOAD_SKIPPED',
+                                     {'reason': 'duplicate_exists', 'existing_file_id': existing_file['id'], 
+                                      'path': existing_file['path'], 'type': 'video'})
+                return True  # Return success since we have the file
+            else:
+                logger.warning(f"[DEDUP] âš ï¸ Database has existing record but file not found at old path: {existing_file['path']}")
+                
+                # Check if we can find the file anywhere in the downloads directory using the filename
+                base_downloads = Path(base_downloads_dir)
+                search_pattern = f"**/{existing_file['filename']}"
+                matching_files = list(base_downloads.glob(search_pattern))
+                
+                if matching_files:
+                    # Found the file in another location
+                    found_file = matching_files[0]  # Use the first match
+                    logger.info(f"[DEDUP] âœ… Found existing file in different location: {found_file}")
+                    logger.info(f"[DEDUP] âœ… Skipping video download - file already exists elsewhere")
+                    
+                    # Log the skip event with the found path
+                    self.safe_db_operation("log_event", self.db.log_event,
+                                         uid, vid, jid, 'DOWNLOAD_SKIPPED',
+                                         {'reason': 'duplicate_exists_different_path', 'existing_file_id': existing_file['id'], 
+                                          'old_path': existing_file['path'], 'found_path': str(found_file), 'type': 'video'})
+                    return True  # Return success since we have the file
+                else:
+                    logger.warning(f"[DEDUP] âš ï¸ File not found anywhere in downloads directory - proceeding with download")
+                    # Continue with download since file is truly missing
+        
         # Setup download path
         video_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "video")
         template = get_filename_template()
-        filename = str(video_dir / template)
+        
+        # Render filename template with actual video info
+        title = info.get('title', 'video')
+        vid_id = info.get('id', '')
+        rendered_filename = template.replace('%(title)s', title).replace('%(id)s', vid_id).replace('%(ext)s', ext)
+        filename = str(video_dir / rendered_filename)
         
         logger.debug(f"Video download path: {filename}")
+        logger.debug(f"[FILENAME-DEBUG] Template: {template}")
+        logger.debug(f"[FILENAME-DEBUG] Rendered: {rendered_filename}")
+        logger.debug(f"[FILENAME-DEBUG] Full path: {filename}")
         
         # Perform download
         try:
@@ -354,18 +478,25 @@ class DownloadManager:
             if success:
                 # Record successful download in database
                 file_path = Path(filename)
+                logger.debug(f"[MEDIAFILE-DEBUG] Checking file existence: {file_path}")
+                logger.debug(f"[MEDIAFILE-DEBUG] File exists: {file_path.exists()}")
+                
                 if file_path.exists():
                     file_size = file_path.stat().st_size
                     file_name = file_path.name
                     
+                    logger.debug(f"[MEDIAFILE-DEBUG] Registering media_file: user_id={uid}, video_uuid={vid}, kind=video, path={str(file_path)}, filename={file_name}, ext={default_video.get('ext', 'unknown')}, size_bytes={file_size}")
                     mid = self.safe_db_operation("record_media_file", self.db.record_media_file,
                                                uid, vid, 'video', None, str(file_path), file_name,
                                                default_video.get('ext', 'unknown'), file_size)
+                    logger.debug(f"[MEDIAFILE-DEBUG] record_media_file returned id: {mid}")
                     
                     self.safe_db_operation("log_event", self.db.log_event,
                                          uid, vid, jid, 'DOWNLOAD_COMPLETED',
                                          {'path': str(file_path), 'type': 'video', 'format_id': default_video.get('format_id')})
                     logger.debug(f"Video download logged in database: {file_path}")
+                else:
+                    logger.warning(f"[MEDIAFILE-DEBUG] File does not exist after download: {file_path}")
             
             return success
             
@@ -378,7 +509,7 @@ class DownloadManager:
     
     def _download_video_audio_with_db(self, url: str, formats: List, video_uuid: str,
                                      session_uuid: str, base_downloads_dir: str,
-                                     args: Dict, uid, vid, jid) -> bool:
+                                     args: Dict, uid, vid, jid, info: Dict) -> bool:
         """Download video+audio with database logging."""
         logger.debug("Starting video+audio download with database integration")
         
@@ -398,9 +529,18 @@ class DownloadManager:
         # Setup download path
         video_audio_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "video_with_audio")
         template = get_filename_template()
-        filename = str(video_audio_dir / template)
+        
+        # Render filename template with actual video info
+        title = info.get('title', 'video')
+        vid_id = info.get('id', '')
+        ext = 'mp4'  # Most video+audio downloads result in mp4
+        rendered_filename = template.replace('%(title)s', title).replace('%(id)s', vid_id).replace('%(ext)s', ext)
+        filename = str(video_audio_dir / rendered_filename)
         
         logger.debug(f"Video+audio download path: {filename}")
+        logger.debug(f"[FILENAME-DEBUG] Template: {template}")
+        logger.debug(f"[FILENAME-DEBUG] Rendered: {rendered_filename}")
+        logger.debug(f"[FILENAME-DEBUG] Full path: {filename}")
         
         # Select format with language preferences
         selected_format = None
@@ -419,7 +559,7 @@ class DownloadManager:
             video_prefs['preferred_quality'] = args.get('quality')
         
         if preferred_langs:
-            logger.debug(f"ðŸŽµ Preferred audio languages: {', '.join(preferred_langs)}")
+            logger.debug(f"Ã°Å¸Å½Âµ Preferred audio languages: {', '.join(preferred_langs)}")
             
             # Try combined formats with language filtering first
             selected_combined = select_combined_with_lang(formats, video_prefs, preferred_langs)
@@ -434,7 +574,7 @@ class DownloadManager:
                 self.safe_db_operation("record_format_selection", self.db.record_format_selection,
                                      uid, vid, 'video_with_audio', selected_format, format_scores, format_prefs)
                 
-                logger.debug(f"ðŸ“¹ Using combined format: {selected_format} (language: {_fmt_audio_lang(selected_combined) or 'unknown'})")
+                logger.debug(f"Ã°Å¸â€œÂ¹ Using combined format: {selected_format} (language: {_fmt_audio_lang(selected_combined) or 'unknown'})")
             else:
                 # Try separate video+audio with language matching
                 video_fmt, audio_fmt = select_video_plus_audio_with_lang(formats, video_prefs, audio_prefs, preferred_langs)
@@ -454,7 +594,7 @@ class DownloadManager:
                     self.safe_db_operation("record_format_selection", self.db.record_format_selection,
                                          uid, vid, 'audio', audio_fmt.get('format_id'), a_scores, a_prefs)
                     
-                    logger.debug(f"ðŸ“¹ Using separate streams: {selected_format} (audio language: {_fmt_audio_lang(audio_fmt) or 'unknown'})")
+                    logger.debug(f"Ã°Å¸â€œÂ¹ Using separate streams: {selected_format} (audio language: {_fmt_audio_lang(audio_fmt) or 'unknown'})")
                 elif require_lang:
                     error_msg = f"Requested audio language(s) {preferred_langs} not available for this video"
                     self.safe_db_operation("log_event", self.db.log_event,
@@ -464,7 +604,7 @@ class DownloadManager:
         
         # Fallback to best available if no language match or no preference
         if not selected_format:
-            logger.debug("âš ï¸ No language match found, falling back to best quality")
+            logger.debug("Ã¢Å¡Â Ã¯Â¸Â No language match found, falling back to best quality")
             default_combined, combined_list = select_combined_video_audio(formats, quality_override=args.get('quality'))
             if default_combined:
                 selected_format = default_combined.get('format_id')
@@ -482,6 +622,60 @@ class DownloadManager:
                                  uid, vid, jid, 'ERROR', {'error': error_msg, 'type': 'video_with_audio'})
             return False
         
+        # Check for existing media file before downloading
+        audio_lang = None
+        if format_method in ["combined_with_lang", "separate_with_lang"] and preferred_langs:
+            audio_lang = preferred_langs[0]  # Use first preferred language for checking
+        
+        existing_file = self.check_existing_media_file(uid, vid, 'video_with_audio', audio_lang, ext)
+        
+        if existing_file:
+            logger.info(f"[DEDUP] Found existing video+audio file in database: {existing_file['filename']}")
+            if self.verify_file_exists(existing_file['path']):
+                logger.info(f"[DEDUP] âœ… Skipping video+audio download - file already exists: {existing_file['path']}")
+                # Log the skip event
+                self.safe_db_operation("log_event", self.db.log_event,
+                                     uid, vid, jid, 'DOWNLOAD_SKIPPED',
+                                     {'reason': 'duplicate_exists', 'existing_file_id': existing_file['id'], 
+                                      'path': existing_file['path'], 'type': 'video_with_audio'})
+                return True  # Return success since we have the file
+            else:
+                logger.warning(f"[DEDUP] âš ï¸ Database has existing record but file not found at old path: {existing_file['path']}")
+                
+                # Check if we can find the file anywhere in the downloads directory using the filename
+                base_downloads = Path(base_downloads_dir)
+                target_filename = existing_file['filename']
+                
+                logger.debug(f"[DEDUP] Searching for files in directory: {base_downloads}")
+                logger.debug(f"[DEDUP] Looking for filename: {target_filename}")
+                
+                # Use iterative search instead of glob to avoid special character issues
+                matching_files = []
+                try:
+                    for file_path in base_downloads.rglob("*"):
+                        if file_path.is_file() and file_path.name == target_filename:
+                            matching_files.append(file_path)
+                except Exception as e:
+                    logger.warning(f"[DEDUP] Error during file search: {e}")
+                
+                logger.debug(f"[DEDUP] Found {len(matching_files)} matching files: {[str(f) for f in matching_files]}")
+                
+                if matching_files:
+                    # Found the file in another location
+                    found_file = matching_files[0]  # Use the first match
+                    logger.info(f"[DEDUP] âœ… Found existing file in different location: {found_file}")
+                    logger.info(f"[DEDUP] âœ… Skipping video+audio download - file already exists elsewhere")
+                    
+                    # Log the skip event with the found path
+                    self.safe_db_operation("log_event", self.db.log_event,
+                                         uid, vid, jid, 'DOWNLOAD_SKIPPED',
+                                         {'reason': 'duplicate_exists_different_path', 'existing_file_id': existing_file['id'], 
+                                          'old_path': existing_file['path'], 'found_path': str(found_file), 'type': 'video_with_audio'})
+                    return True  # Return success since we have the file
+                else:
+                    logger.warning(f"[DEDUP] âš ï¸ File not found anywhere in downloads directory - proceeding with download")
+                    # Continue with download since file is truly missing
+        
         # Perform download
         try:
             success = download_video_with_audio(url, args.get('quality') or "720p", filename, format_override=selected_format)
@@ -489,6 +683,28 @@ class DownloadManager:
             if success:
                 # Record successful download in database
                 file_path = Path(filename)
+                logger.debug(f"[MEDIAFILE-DEBUG] Checking file existence: {file_path}")
+                logger.debug(f"[MEDIAFILE-DEBUG] File exists: {file_path.exists()}")
+                
+                # If the expected file doesn't exist, look for the yt-dlp sanitized version
+                if not file_path.exists():
+                    # yt-dlp sanitizes filenames differently, try to find the actual file
+                    download_dir = file_path.parent
+                    expected_filename = file_path.name
+                    logger.debug(f"[MEDIAFILE-DEBUG] Expected file not found, searching in directory: {download_dir}")
+                    
+                    # Look for files with similar names (yt-dlp may have sanitized differently)
+                    if download_dir.exists():
+                        for actual_file in download_dir.iterdir():
+                            if actual_file.is_file() and actual_file.suffix == '.mp4':
+                                logger.debug(f"[MEDIAFILE-DEBUG] Found actual file: {actual_file.name}")
+                                # Use the first mp4 file found (should be our download)
+                                file_path = actual_file
+                                break
+                    
+                    logger.debug(f"[MEDIAFILE-DEBUG] Using actual file path: {file_path}")
+                    logger.debug(f"[MEDIAFILE-DEBUG] File exists now: {file_path.exists()}")
+                
                 if file_path.exists():
                     file_size = file_path.stat().st_size
                     file_name = file_path.name
@@ -498,14 +714,18 @@ class DownloadManager:
                     if format_method in ["combined_with_lang", "separate_with_lang"] and preferred_langs:
                         audio_lang = preferred_langs[0]  # Use first preferred language as recorded language
                     
+                    logger.debug(f"[MEDIAFILE-DEBUG] Registering media_file: user_id={uid}, video_uuid={vid}, kind=video_with_audio, path={str(file_path)}, filename={file_name}, ext=mp4, size_bytes={file_size}")
                     mid = self.safe_db_operation("record_media_file", self.db.record_media_file,
                                                uid, vid, 'video_with_audio', audio_lang, str(file_path), file_name,
                                                'mp4', file_size)  # Most video+audio downloads result in mp4
+                    logger.debug(f"[MEDIAFILE-DEBUG] record_media_file returned id: {mid}")
                     
                     self.safe_db_operation("log_event", self.db.log_event,
                                          uid, vid, jid, 'DOWNLOAD_COMPLETED',
                                          {'path': str(file_path), 'type': 'video_with_audio', 'format_method': format_method, 'format_id': selected_format})
                     logger.debug(f"Video+audio download logged in database: {file_path}")
+                else:
+                    logger.warning(f"[MEDIAFILE-DEBUG] File does not exist after download: {file_path}")
             
             return success
             

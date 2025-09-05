@@ -17,7 +17,7 @@ from .models import (
 ANON_EMAIL = 'anonymous@localhost'
 
 class DbPort:
-    """Interface for DB sideâ€‘effects. Keep calls minimal and idempotent where possible."""
+    """Interface for DB sideÃ¢â‚¬â€˜effects. Keep calls minimal and idempotent where possible."""
     def ensure_anonymous_user(self) -> str: ...
     def begin_session(self, user_id: str, effective_config: Dict[str, Any]) -> str: ...
     def end_session(self, session_uuid: str) -> None: ...
@@ -34,6 +34,8 @@ class DbPort:
                           path: str, filename: str, ext: str, size_bytes: Optional[int],
                           is_final: bool = True, status: str = 'completed') -> int: ...
     def mark_media_deleted(self, media_file_id: int, file_moved_to: Optional[str] = None) -> None: ...
+    def check_existing_media_file(self, user_id: str, video_uuid: str, kind: str, 
+                                 language_code: Optional[str], ext: str) -> Optional[Dict]: ...
 
     def log_event(self, user_id: str, video_uuid: Optional[str], job_id: Optional[str],
                   event_type: str, payload: Dict[str, Any]) -> None: ...
@@ -208,6 +210,34 @@ class PostgresDbPort(DbPort):
                     s.commit()
         return self._with_retry(_op)
 
+    def check_existing_media_file(self, user_id: str, video_uuid: str, kind: str, 
+                                 language_code: Optional[str], ext: str) -> Optional[Dict]:
+        """Check if a media file of the same variant already exists in the database."""
+        def _op():
+            with self._get_session() as s:
+                existing_files = s.query(MediaFile).filter(
+                    MediaFile.user_id == user_id,
+                    MediaFile.video_uuid == video_uuid,
+                    MediaFile.kind == kind,
+                    MediaFile.language_code == language_code,
+                    MediaFile.ext == ext,
+                    MediaFile.is_final == True,
+                    MediaFile.status == 'completed'
+                ).all()
+                
+                if existing_files:
+                    # Return the most recent one
+                    latest_file = max(existing_files, key=lambda x: x.created_at)
+                    return {
+                        'id': latest_file.id,
+                        'path': latest_file.path,
+                        'filename': latest_file.filename,
+                        'size_bytes': latest_file.size_bytes,
+                        'created_at': latest_file.created_at
+                    }
+                return None
+        return self._with_retry(_op)
+
     def log_event(self, user_id: str, video_uuid: Optional[str], job_id: Optional[str],
                   event_type: str, payload: dict) -> None:
         def _op():
@@ -238,4 +268,4 @@ def get_db_port_from_env() -> DbPort:
         return PostgresDbPort(url)
     except Exception:
         # never break the app
-        return NullDbPort()
+        return NullDbPort() 

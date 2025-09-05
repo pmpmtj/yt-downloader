@@ -1,0 +1,47 @@
+Install Python deps 
+pip install "sqlalchemy>=2.0" "psycopg[binary]" "python-dotenv"
+
+
+
+Install App
+pip install -e .
+
+
+
+create .env:
+DATABASE_ENABLED=true
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/yt_app
+
+
+
+create database:
+psql -U postgres -c "CREATE DATABASE yt_app;"
+
+
+
+Apply schema - Place schema.sql in src/my_project/db/
+# Native
+psql -U postgres -d yt_app -f my_project/src/my_project/db/schema.sql
+
+
+
+Configure how env vars are loaded - Development via .env (auto-load):
+Add at app start (once):
+from dotenv import load_dotenv; load_dotenv()
+
+
+
+Recreate DB
+psql -U postgres -c "DROP DATABASE IF EXISTS yt_app;"
+psql -U postgres -c "CREATE DATABASE yt_app;"
+
+
+
+my_project/
+  src/
+    my_app/            # your YouTube downloader
+      db/              # ← new folder for DB integration
+        __init__.py
+        models.py
+        db_port.py
+        schema.sql

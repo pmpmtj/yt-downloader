@@ -1,6 +1,31 @@
+# Database Integration — Middle‑Ground v1 (Safe, Lean, Django‑ready) 
 
+This document gives you: (1) a clear, lean schema; (2) exact SQL DDL; (3) SQLAlchemy models; (4) a tiny database adapter with retries; (5) wiring points that won’t break your current CLI. It reflects your choices:
 
-**Create a .env file in in this directory**
+- **Jobs table:** yes (progress + status).
+- **Artifact uniqueness:** enforce exact uniqueness for variants.
+- **Audio language fallback:** allow fallback and log a **warning** event.
+- **Transcripts:** store file path forever; keep a **summary** text column for search (LLM‑generated later).
+- **User:** anonymous only (for now) — attach all to `anonymous@localhost`.
+- **Partitioning:** **plan** for per‑user partitioning (keep tables partition‑ready; optional variant DDL provided).
+- **Config snapshot:** persist effective, normalized config per session.
+- **Failure semantics:** short retry loop in DB adapter; never block downloads.
+
+---
+
+## 0) Quick setup
+
+**Dependencies**
+```bash
+pip install "sqlalchemy>=2.0" "psycopg[binary]"
+```
+
+**Install App**
+```bash
+pip install -e .
+```
+
+**Environment** (example)
 ```bash
 # .env or system env
 DATABASE_ENABLED=true
@@ -12,11 +37,40 @@ DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/yt_app
 psql -U postgres -c "CREATE DATABASE yt_app;"
 ```
 
+**Bootstrap** (run once)
+```bash
+psql "$DATABASE_URL" -f schema.sql
+
+### OR
+
+psql -U postgres -d yt_app -f my_project/src/my_project/db/schema.sql
+```
+
+**CLI code to Recreate DB if needed only** - 
+```bash
+psql -U postgres -c "DROP DATABASE IF EXISTS yt_app;"
+psql -U postgres -c "CREATE DATABASE yt_app;"
+```
+
+**DB file and folder layout**
+```bash
+my_project/
+  src/
+    my_app/            # your YouTube downloader
+      db/              # ← new folder for DB integration
+        __init__.py
+        models.py
+        db_port.py
+        schema.sql
+```
+
 ---
 
 ## 1) `schema.sql` — exact DDL (PostgreSQL)
 
 **Location**: `my_project/src/my_project/db/schema.sql`
+
+> Lean defaults, partition‑ready columns, enums, unique constraints, and indexes. Transcript text is not stored; only path + summary for search.
 
 ```sql
 -- Extensions
@@ -42,7 +96,7 @@ CREATE TABLE IF NOT EXISTS platform_users (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Seed anonymous (donâ€™t pass id to avoid UUID/bigint mismatch)
+-- Seed anonymous (don’t pass id to avoid UUID/bigint mismatch)
 INSERT INTO platform_users (email, is_anonymous)
 VALUES ('anonymous@localhost', TRUE)
 ON CONFLICT (email) DO NOTHING;
@@ -75,7 +129,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE INDEX IF NOT EXISTS idx_jobs_user ON jobs(user_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 
--- Videos (deâ€‘dup per user by YouTube ID)
+-- Videos (de‑dup per user by YouTube ID)
 CREATE TABLE IF NOT EXISTS videos (
     video_uuid  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id     UUID NOT NULL REFERENCES platform_users(id),
@@ -94,7 +148,7 @@ CREATE TABLE IF NOT EXISTS media_files (
     video_uuid  UUID NOT NULL REFERENCES videos(video_uuid),
     kind        media_kind NOT NULL,
     language_code TEXT,              -- e.g., 'en', 'pt-PT'
-    path        TEXT NOT NULL,       -- absolute or projectâ€‘relative
+    path        TEXT NOT NULL,       -- absolute or project‑relative
     filename    TEXT NOT NULL,
     ext         TEXT NOT NULL,       -- 'mp4','mp3','txt','json'
     size_bytes  BIGINT,
@@ -118,7 +172,7 @@ CREATE TABLE IF NOT EXISTS format_selection (
     user_id         UUID NOT NULL REFERENCES platform_users(id),
     video_uuid      UUID NOT NULL REFERENCES videos(video_uuid),
     selection_kind  TEXT NOT NULL,      -- 'audio','video','merged', etc.
-    chosen_format_id TEXT,              -- ytâ€‘dlp's format id
+    chosen_format_id TEXT,              -- yt‑dlp's format id
     quality_score   NUMERIC(6,3),
     format_score    NUMERIC(6,3),
     size_score      NUMERIC(6,3),
@@ -154,10 +208,10 @@ CREATE TABLE IF NOT EXISTS transcripts (
 );
 CREATE INDEX IF NOT EXISTS idx_transcripts_user ON transcripts(user_id);
 CREATE INDEX IF NOT EXISTS idx_transcripts_video ON transcripts(video_uuid);
--- Lightweight fullâ€‘text search on summaries
+-- Lightweight full‑text search on summaries
 CREATE INDEX IF NOT EXISTS idx_transcripts_summary_fts ON transcripts USING GIN (to_tsvector('simple', COALESCE(summary,'')));
 
--- Optional housekeeping: autoâ€‘update jobs.updated_at (trigger)
+-- Optional housekeeping: auto‑update jobs.updated_at (trigger)
 CREATE OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER AS $func$
 BEGIN
   NEW.updated_at = NOW();
@@ -173,9 +227,22 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 ```
 
-**run psql command** 
-```bash
-psql -U postgres -d yt_app -f my_project/src/my_project/db/schema.sql
+### Optional: partition‑now variant (only if you’re ready)
+> If you want **immediate** per‑user partitioning, apply it to the busiest tables (jobs, media_files, events). Note: primary keys and foreign keys become slightly more complex (they typically include `user_id`). If you’re not 100% comfortable, skip this and keep the base DDL above — you’re already partition‑ready.
+
+```sql
+-- Example: media_files partitioned by HASH(user_id)
+ALTER TABLE media_files PARTITION BY HASH (user_id);
+CREATE TABLE IF NOT EXISTS media_files_p0 PARTITION OF media_files FOR VALUES WITH (MODULUS 8, REMAINDER 0);
+CREATE TABLE IF NOT EXISTS media_files_p1 PARTITION OF media_files FOR VALUES WITH (MODULUS 8, REMAINDER 1);
+CREATE TABLE IF NOT EXISTS media_files_p2 PARTITION OF media_files FOR VALUES WITH (MODULUS 8, REMAINDER 2);
+CREATE TABLE IF NOT EXISTS media_files_p3 PARTITION OF media_files FOR VALUES WITH (MODULUS 8, REMAINDER 3);
+CREATE TABLE IF NOT EXISTS media_files_p4 PARTITION OF media_files FOR VALUES WITH (MODULUS 8, REMAINDER 4);
+CREATE TABLE IF NOT EXISTS media_files_p5 PARTITION OF media_files FOR VALUES WITH (MODULUS 8, REMAINDER 5);
+CREATE TABLE IF NOT EXISTS media_files_p6 PARTITION OF media_files FOR VALUES WITH (MODULUS 8, REMAINDER 6);
+CREATE TABLE IF NOT EXISTS media_files_p7 PARTITION OF media_files FOR VALUES WITH (MODULUS 8, REMAINDER 7);
+
+-- Repeat similarly for events and jobs if desired.
 ```
 
 ---
@@ -184,10 +251,12 @@ psql -U postgres -d yt_app -f my_project/src/my_project/db/schema.sql
 
 **Location**: `my_project/src/my_project/db/models.py`
 
+> Models mirror the SQL. Enums are mapped to existing Postgres enums (we don’t auto‑create types). Use these for the `PostgresDbPort` implementation.
+
 ```python
 #  models.py
 from __future__ import annotations
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import (
@@ -198,10 +267,6 @@ from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 Base = declarative_base()
-
-def utc_now():
-    """Helper function to get current UTC datetime for SQLAlchemy defaults"""
-    return datetime.now(timezone.utc)
 
 MediaKind = SAEnum(
     'audio','video','video_with_audio','transcript','metadata',
@@ -221,13 +286,13 @@ class PlatformUser(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text('uuid_generate_v4()'))
     email = Column(String, nullable=False, unique=True)
     is_anonymous = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime, nullable=False, default=utc_now)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 class Session(Base):
     __tablename__ = 'sessions'
     session_uuid = Column(UUID(as_uuid=True), primary_key=True, server_default=text('uuid_generate_v4()'))
     user_id = Column(UUID(as_uuid=True), ForeignKey('platform_users.id'), nullable=False)
-    started_at = Column(DateTime, nullable=False, default=utc_now)
+    started_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     ended_at = Column(DateTime)
     effective_config = Column(JSONB, nullable=False, default=dict)
 
@@ -243,8 +308,8 @@ class Job(Base):
     message = Column(Text)
     tries = Column(Integer, nullable=False, default=0)
     last_error = Column(Text)
-    created_at = Column(DateTime, nullable=False, default=utc_now)
-    updated_at = Column(DateTime, nullable=False, default=utc_now)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 class Video(Base):
     __tablename__ = 'videos'
@@ -253,7 +318,7 @@ class Video(Base):
     youtube_id = Column(Text, nullable=False)
     title = Column(Text)
     raw_info = Column(JSONB)
-    created_at = Column(DateTime, nullable=False, default=utc_now)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     __table_args__ = (
         UniqueConstraint('user_id', 'youtube_id', name='uq_video_user_youtube'),
     )
@@ -271,7 +336,7 @@ class MediaFile(Base):
     size_bytes = Column(BigInteger)
     is_final = Column(Boolean, nullable=False, default=True)
     status = Column(MediaStatus, nullable=False, default='completed')
-    created_at = Column(DateTime, nullable=False, default=utc_now)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     deleted_at = Column(DateTime)
     file_moved_to = Column(Text)
 
@@ -289,7 +354,7 @@ class FormatSelection(Base):
     total_score = Column(Numeric)
     attempt_rank = Column(Integer)
     preferences_snapshot = Column(JSONB)
-    created_at = Column(DateTime, nullable=False, default=utc_now)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 class Event(Base):
     __tablename__ = 'events'
@@ -299,7 +364,7 @@ class Event(Base):
     job_id = Column(UUID(as_uuid=True), ForeignKey('jobs.job_id'))
     event_type = Column(String, nullable=False)
     payload = Column(JSONB)
-    created_at = Column(DateTime, nullable=False, default=utc_now)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 class Transcript(Base):
     __tablename__ = 'transcripts'
@@ -309,8 +374,10 @@ class Transcript(Base):
     media_file_id = Column(BigInteger, ForeignKey('media_files.id'))
     path = Column(Text, nullable=False)
     summary = Column(Text)
-    created_at = Column(DateTime, nullable=False, default=utc_now)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 ```
+
+> Note: If you prefer precise numeric scores, change the `String` score fields above to `Numeric(6,3)` and ensure you pass `Decimal` values.
 
 ---
 
@@ -318,13 +385,14 @@ class Transcript(Base):
 
 **Location**: `my_project/src/my_project/db/db_port.py`
 
+> **Design:** A tiny, dependency‑free interface. The **NullDbPort** is the default (no‑op). **PostgresDbPort** uses SQLAlchemy and does a short retry loop (never blocks the download). Integrate by calling this port only at **safe milestones**.
+
 ```python
 # db_port.py
 from __future__ import annotations
 import os, time, datetime
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, Optional
-from datetime import timezone
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -338,7 +406,7 @@ from .models import (
 ANON_EMAIL = 'anonymous@localhost'
 
 class DbPort:
-    """Interface for DB sideâ€‘effects. Keep calls minimal and idempotent where possible."""
+    """Interface for DB side‑effects. Keep calls minimal and idempotent where possible."""
     def ensure_anonymous_user(self) -> str: ...
     def begin_session(self, user_id: str, effective_config: Dict[str, Any]) -> str: ...
     def end_session(self, session_uuid: str) -> None: ...
@@ -355,8 +423,6 @@ class DbPort:
                           path: str, filename: str, ext: str, size_bytes: Optional[int],
                           is_final: bool = True, status: str = 'completed') -> int: ...
     def mark_media_deleted(self, media_file_id: int, file_moved_to: Optional[str] = None) -> None: ...
-    def check_existing_media_file(self, user_id: str, video_uuid: str, kind: str, 
-                                 language_code: Optional[str], ext: str) -> Optional[Dict]: ...
 
     def log_event(self, user_id: str, video_uuid: Optional[str], job_id: Optional[str],
                   event_type: str, payload: Dict[str, Any]) -> None: ...
@@ -445,7 +511,7 @@ class PostgresDbPort(DbPort):
             with self._get_session() as s:
                 rec = s.get(DbSession, session_uuid)
                 if rec:
-                    rec.ended_at = datetime.datetime.now(timezone.utc)
+                    rec.ended_at = datetime.utcnow()
                     s.commit()
         return self._with_retry(_op)
 
@@ -522,41 +588,14 @@ class PostgresDbPort(DbPort):
 
     def mark_media_deleted(self, media_file_id: int, file_moved_to: Optional[str] = None) -> None:
         def _op():
+            from datetime import datetime as dt
             with self._get_session() as s:
                 mf = s.get(MediaFile, media_file_id)
                 if mf:
                     mf.status = 'deleted'
-                    mf.deleted_at = datetime.datetime.now(timezone.utc)
+                    mf.deleted_at = dt.utcnow()
                     if file_moved_to: mf.file_moved_to = file_moved_to
                     s.commit()
-        return self._with_retry(_op)
-
-    def check_existing_media_file(self, user_id: str, video_uuid: str, kind: str, 
-                                 language_code: Optional[str], ext: str) -> Optional[Dict]:
-        """Check if a media file of the same variant already exists in the database."""
-        def _op():
-            with self._get_session() as s:
-                existing_files = s.query(MediaFile).filter(
-                    MediaFile.user_id == user_id,
-                    MediaFile.video_uuid == video_uuid,
-                    MediaFile.kind == kind,
-                    MediaFile.language_code == language_code,
-                    MediaFile.ext == ext,
-                    MediaFile.is_final == True,
-                    MediaFile.status == 'completed'
-                ).all()
-                
-                if existing_files:
-                    # Return the most recent one
-                    latest_file = max(existing_files, key=lambda x: x.created_at)
-                    return {
-                        'id': latest_file.id,
-                        'path': latest_file.path,
-                        'filename': latest_file.filename,
-                        'size_bytes': latest_file.size_bytes,
-                        'created_at': latest_file.created_at
-                    }
-                return None
         return self._with_retry(_op)
 
     def log_event(self, user_id: str, video_uuid: Optional[str], job_id: Optional[str],
@@ -589,7 +628,7 @@ def get_db_port_from_env() -> DbPort:
         return PostgresDbPort(url)
     except Exception:
         # never break the app
-        return NullDbPort() 
+        return NullDbPort()
 ```
 
 ---
@@ -597,6 +636,8 @@ def get_db_port_from_env() -> DbPort:
 ## 4) `download_manager.py` — Wiring points 
 
 **New File**: `my_project/src/my_project/download_manager.py`
+
+This file implements a `DownloadManager` class that wraps existing download functionality with database logging:
 
 ```python
 # download_manager.py
@@ -624,7 +665,8 @@ from .yt_downloads_utils import (
     download_transcript, get_filename_template
 )
 from .utils.path_utils import (
-    create_download_structure, load_normalized_config
+    create_download_structure, load_normalized_config,
+    generate_video_uuid
 )
 
 # Import database functionality
@@ -662,32 +704,6 @@ class DownloadManager:
         except Exception as e:
             logger.warning(f"[DB WARN] {operation_name}: {e}")
             return None
-    
-    def check_existing_media_file(self, user_id: str, video_uuid: str, kind: str, 
-                                 language_code: Optional[str], ext: str) -> Optional[Dict]:
-        """Check if a media file of the same variant already exists in the database."""
-        return self.safe_db_operation("check_existing_media_file", self.db.check_existing_media_file,
-                                     user_id, video_uuid, kind, language_code, ext)
-    
-    def verify_file_exists(self, file_path: str) -> bool:
-        """Verify that a file still exists on disk and is readable."""
-        try:
-            path_obj = Path(file_path)
-            if not path_obj.exists():
-                logger.debug(f"[DEDUP] File does not exist on disk: {file_path}")
-                return False
-            
-            # Check if file is readable and has content
-            if path_obj.stat().st_size == 0:
-                logger.debug(f"[DEDUP] File is empty: {file_path}")
-                return False
-                
-            logger.debug(f"[DEDUP] File exists and is valid: {file_path}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"[DEDUP] Error verifying file: {file_path} - {str(e)}")
-            return False
     
     def run_download_with_db(self, url: str, session_uuid: str, base_downloads_dir: str, 
                            download_config: Dict[str, Any]) -> Dict[str, Any]:
@@ -763,9 +779,9 @@ class DownloadManager:
             self.safe_db_operation("log_event", self.db.log_event, 
                                  uid, vid, jid, 'INFO_FETCHED', {'id': info['id']})
             
-            # Step 3: Use video UUID from database (for proper deduplication)
-            video_uuid = vid  # Use the video_uuid returned by upsert_video for deduplication
-            logger.debug(f"Using video UUID from database: {video_uuid}")
+            # Step 3: Generate video UUID and setup directories
+            video_uuid = generate_video_uuid()
+            logger.debug(f"Generated video UUID: {video_uuid}")
             
             # Step 4: Process downloads
             results = self._process_downloads(
@@ -826,15 +842,15 @@ class DownloadManager:
             try:
                 success = self._download_audio_with_db(
                     url, formats, video_uuid, session_uuid, base_downloads_dir, 
-                    args, uid, vid, jid, info
+                    args, uid, vid, jid
                 )
                 if success:
                     success_count += 1
-                    logger.info("âœ… Audio download completed successfully")
+                    logger.info("✅ Audio download completed successfully")
                 else:
-                    logger.warning("âŒ Audio download failed")
+                    logger.warning("❌ Audio download failed")
             except Exception as e:
-                logger.error(f"ðŸ’¥ Audio download error: {str(e)}")
+                logger.error(f"💥 Audio download error: {str(e)}")
         
         # Process video-only download
         if args.get('video_only'):
@@ -842,15 +858,15 @@ class DownloadManager:
             try:
                 success = self._download_video_with_db(
                     url, formats, video_uuid, session_uuid, base_downloads_dir,
-                    args, uid, vid, jid, info
+                    args, uid, vid, jid
                 )
                 if success:
                     success_count += 1
-                    logger.info("âœ… Video download completed successfully")
+                    logger.info("✅ Video download completed successfully")
                 else:
-                    logger.warning("âŒ Video download failed")
+                    logger.warning("❌ Video download failed")
             except Exception as e:
-                logger.error(f"ðŸ’¥ Video download error: {str(e)}")
+                logger.error(f"💥 Video download error: {str(e)}")
         
         # Process video+audio download  
         if args.get('video_with_audio'):
@@ -858,15 +874,15 @@ class DownloadManager:
             try:
                 success = self._download_video_audio_with_db(
                     url, formats, video_uuid, session_uuid, base_downloads_dir,
-                    args, uid, vid, jid, info
+                    args, uid, vid, jid
                 )
                 if success:
                     success_count += 1
-                    logger.info("âœ… Video+audio download completed successfully") 
+                    logger.info("✅ Video+audio download completed successfully") 
                 else:
-                    logger.warning("âŒ Video+audio download failed")
+                    logger.warning("❌ Video+audio download failed")
             except Exception as e:
-                logger.error(f"ðŸ’¥ Video+audio download error: {str(e)}")
+                logger.error(f"💥 Video+audio download error: {str(e)}")
         
         # Process transcript download
         if args.get('transcript'):
@@ -878,19 +894,19 @@ class DownloadManager:
                 )
                 if success:
                     success_count += 1
-                    logger.info("âœ… Transcript download completed successfully")
+                    logger.info("✅ Transcript download completed successfully")
                 else:
-                    logger.warning("âŒ Transcript download failed")
+                    logger.warning("❌ Transcript download failed")
             except Exception as e:
-                logger.error(f"ðŸ’¥ Transcript download error: {str(e)}")
+                logger.error(f"💥 Transcript download error: {str(e)}")
         
         results["success_count"] = success_count
-        logger.info(f"ðŸ“Š Downloads completed: {success_count}/{total_requested}")
+        logger.info(f"📊 Downloads completed: {success_count}/{total_requested}")
         return results
     
     def _download_audio_with_db(self, url: str, formats: List, video_uuid: str, 
                                session_uuid: str, base_downloads_dir: str, 
-                               args: Dict, uid, vid, jid, info: Dict) -> bool:
+                               args: Dict, uid, vid, jid) -> bool:
         """Download audio with database logging."""
         logger.debug("Starting audio download with database integration")
         
@@ -908,58 +924,12 @@ class DownloadManager:
         self.safe_db_operation("record_format_selection", self.db.record_format_selection,
                              uid, vid, 'audio', default_audio.get('format_id'), format_scores, format_prefs)
         
-        # Check for existing media file before downloading
-        ext = default_audio.get('ext', 'mp3')
-        existing_file = self.check_existing_media_file(uid, vid, 'audio', None, ext)
-        
-        if existing_file:
-            logger.info(f"[DEDUP] Found existing audio file in database: {existing_file['filename']}")
-            if self.verify_file_exists(existing_file['path']):
-                logger.info(f"[DEDUP] ✅ Skipping audio download - file already exists: {existing_file['path']}")
-                # Log the skip event
-                self.safe_db_operation("log_event", self.db.log_event,
-                                     uid, vid, jid, 'DOWNLOAD_SKIPPED',
-                                     {'reason': 'duplicate_exists', 'existing_file_id': existing_file['id'], 
-                                      'path': existing_file['path'], 'type': 'audio'})
-                return True  # Return success since we have the file
-            else:
-                logger.warning(f"[DEDUP] ⚠️ Database has existing record but file not found at old path: {existing_file['path']}")
-                
-                # Check if we can find the file anywhere in the downloads directory using the filename
-                base_downloads = Path(base_downloads_dir)
-                search_pattern = f"**/{existing_file['filename']}"
-                matching_files = list(base_downloads.glob(search_pattern))
-                
-                if matching_files:
-                    # Found the file in another location
-                    found_file = matching_files[0]  # Use the first match
-                    logger.info(f"[DEDUP] ✅ Found existing file in different location: {found_file}")
-                    logger.info(f"[DEDUP] ✅ Skipping audio download - file already exists elsewhere")
-                    
-                    # Log the skip event with the found path
-                    self.safe_db_operation("log_event", self.db.log_event,
-                                         uid, vid, jid, 'DOWNLOAD_SKIPPED',
-                                         {'reason': 'duplicate_exists_different_path', 'existing_file_id': existing_file['id'], 
-                                          'old_path': existing_file['path'], 'found_path': str(found_file), 'type': 'audio'})
-                    return True  # Return success since we have the file
-                else:
-                    logger.warning(f"[DEDUP] ⚠️ File not found anywhere in downloads directory - proceeding with download")
-                    # Continue with download since file is truly missing
-        
         # Setup download path
         audio_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "audio")
         template = get_filename_template()
-        
-        # Render filename template with actual video info
-        title = info.get('title', 'video')
-        vid_id = info.get('id', '')
-        rendered_filename = template.replace('%(title)s', title).replace('%(id)s', vid_id).replace('%(ext)s', ext)
-        filename = str(audio_dir / rendered_filename)
+        filename = str(audio_dir / template)
         
         logger.debug(f"Audio download path: {filename}")
-        logger.debug(f"[FILENAME-DEBUG] Template: {template}")
-        logger.debug(f"[FILENAME-DEBUG] Rendered: {rendered_filename}")
-        logger.debug(f"[FILENAME-DEBUG] Full path: {filename}")
         
         # Perform download
         try:
@@ -969,25 +939,18 @@ class DownloadManager:
             if success:
                 # Record successful download in database
                 file_path = Path(filename)
-                logger.debug(f"[MEDIAFILE-DEBUG] Checking file existence: {file_path}")
-                logger.debug(f"[MEDIAFILE-DEBUG] File exists: {file_path.exists()}")
-                
                 if file_path.exists():
                     file_size = file_path.stat().st_size
                     file_name = file_path.name
                     
-                    logger.debug(f"[MEDIAFILE-DEBUG] Registering media_file: user_id={uid}, video_uuid={vid}, kind=audio, path={str(file_path)}, filename={file_name}, ext={default_audio.get('ext', 'unknown')}, size_bytes={file_size}")
                     mid = self.safe_db_operation("record_media_file", self.db.record_media_file,
                                                uid, vid, 'audio', None, str(file_path), file_name, 
                                                default_audio.get('ext', 'unknown'), file_size)
-                    logger.debug(f"[MEDIAFILE-DEBUG] record_media_file returned id: {mid}")
                     
                     self.safe_db_operation("log_event", self.db.log_event,
                                          uid, vid, jid, 'DOWNLOAD_COMPLETED', 
                                          {'path': str(file_path), 'type': 'audio', 'format_id': default_audio.get('format_id')})
                     logger.debug(f"Audio download logged in database: {file_path}")
-                else:
-                    logger.warning(f"[MEDIAFILE-DEBUG] File does not exist after download: {file_path}")
             
             return success
             
@@ -1000,7 +963,7 @@ class DownloadManager:
     
     def _download_video_with_db(self, url: str, formats: List, video_uuid: str,
                                session_uuid: str, base_downloads_dir: str,
-                               args: Dict, uid, vid, jid, info: Dict) -> bool:
+                               args: Dict, uid, vid, jid) -> bool:
         """Download video-only with database logging."""
         logger.debug("Starting video-only download with database integration")
         
@@ -1018,58 +981,12 @@ class DownloadManager:
         self.safe_db_operation("record_format_selection", self.db.record_format_selection,
                              uid, vid, 'video', default_video.get('format_id'), format_scores, format_prefs)
         
-        # Check for existing media file before downloading
-        ext = default_video.get('ext', 'mp4')
-        existing_file = self.check_existing_media_file(uid, vid, 'video', None, ext)
-        
-        if existing_file:
-            logger.info(f"[DEDUP] Found existing video file in database: {existing_file['filename']}")
-            if self.verify_file_exists(existing_file['path']):
-                logger.info(f"[DEDUP] ✅ Skipping video download - file already exists: {existing_file['path']}")
-                # Log the skip event
-                self.safe_db_operation("log_event", self.db.log_event,
-                                     uid, vid, jid, 'DOWNLOAD_SKIPPED',
-                                     {'reason': 'duplicate_exists', 'existing_file_id': existing_file['id'], 
-                                      'path': existing_file['path'], 'type': 'video'})
-                return True  # Return success since we have the file
-            else:
-                logger.warning(f"[DEDUP] ⚠️ Database has existing record but file not found at old path: {existing_file['path']}")
-                
-                # Check if we can find the file anywhere in the downloads directory using the filename
-                base_downloads = Path(base_downloads_dir)
-                search_pattern = f"**/{existing_file['filename']}"
-                matching_files = list(base_downloads.glob(search_pattern))
-                
-                if matching_files:
-                    # Found the file in another location
-                    found_file = matching_files[0]  # Use the first match
-                    logger.info(f"[DEDUP] ✅ Found existing file in different location: {found_file}")
-                    logger.info(f"[DEDUP] ✅ Skipping video download - file already exists elsewhere")
-                    
-                    # Log the skip event with the found path
-                    self.safe_db_operation("log_event", self.db.log_event,
-                                         uid, vid, jid, 'DOWNLOAD_SKIPPED',
-                                         {'reason': 'duplicate_exists_different_path', 'existing_file_id': existing_file['id'], 
-                                          'old_path': existing_file['path'], 'found_path': str(found_file), 'type': 'video'})
-                    return True  # Return success since we have the file
-                else:
-                    logger.warning(f"[DEDUP] ⚠️ File not found anywhere in downloads directory - proceeding with download")
-                    # Continue with download since file is truly missing
-        
         # Setup download path
         video_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "video")
         template = get_filename_template()
-        
-        # Render filename template with actual video info
-        title = info.get('title', 'video')
-        vid_id = info.get('id', '')
-        rendered_filename = template.replace('%(title)s', title).replace('%(id)s', vid_id).replace('%(ext)s', ext)
-        filename = str(video_dir / rendered_filename)
+        filename = str(video_dir / template)
         
         logger.debug(f"Video download path: {filename}")
-        logger.debug(f"[FILENAME-DEBUG] Template: {template}")
-        logger.debug(f"[FILENAME-DEBUG] Rendered: {rendered_filename}")
-        logger.debug(f"[FILENAME-DEBUG] Full path: {filename}")
         
         # Perform download
         try:
@@ -1079,25 +996,18 @@ class DownloadManager:
             if success:
                 # Record successful download in database
                 file_path = Path(filename)
-                logger.debug(f"[MEDIAFILE-DEBUG] Checking file existence: {file_path}")
-                logger.debug(f"[MEDIAFILE-DEBUG] File exists: {file_path.exists()}")
-                
                 if file_path.exists():
                     file_size = file_path.stat().st_size
                     file_name = file_path.name
                     
-                    logger.debug(f"[MEDIAFILE-DEBUG] Registering media_file: user_id={uid}, video_uuid={vid}, kind=video, path={str(file_path)}, filename={file_name}, ext={default_video.get('ext', 'unknown')}, size_bytes={file_size}")
                     mid = self.safe_db_operation("record_media_file", self.db.record_media_file,
                                                uid, vid, 'video', None, str(file_path), file_name,
                                                default_video.get('ext', 'unknown'), file_size)
-                    logger.debug(f"[MEDIAFILE-DEBUG] record_media_file returned id: {mid}")
                     
                     self.safe_db_operation("log_event", self.db.log_event,
                                          uid, vid, jid, 'DOWNLOAD_COMPLETED',
                                          {'path': str(file_path), 'type': 'video', 'format_id': default_video.get('format_id')})
                     logger.debug(f"Video download logged in database: {file_path}")
-                else:
-                    logger.warning(f"[MEDIAFILE-DEBUG] File does not exist after download: {file_path}")
             
             return success
             
@@ -1110,7 +1020,7 @@ class DownloadManager:
     
     def _download_video_audio_with_db(self, url: str, formats: List, video_uuid: str,
                                      session_uuid: str, base_downloads_dir: str,
-                                     args: Dict, uid, vid, jid, info: Dict) -> bool:
+                                     args: Dict, uid, vid, jid) -> bool:
         """Download video+audio with database logging."""
         logger.debug("Starting video+audio download with database integration")
         
@@ -1130,18 +1040,9 @@ class DownloadManager:
         # Setup download path
         video_audio_dir = create_download_structure(base_downloads_dir, session_uuid, video_uuid, "video_with_audio")
         template = get_filename_template()
-        
-        # Render filename template with actual video info
-        title = info.get('title', 'video')
-        vid_id = info.get('id', '')
-        ext = 'mp4'  # Most video+audio downloads result in mp4
-        rendered_filename = template.replace('%(title)s', title).replace('%(id)s', vid_id).replace('%(ext)s', ext)
-        filename = str(video_audio_dir / rendered_filename)
+        filename = str(video_audio_dir / template)
         
         logger.debug(f"Video+audio download path: {filename}")
-        logger.debug(f"[FILENAME-DEBUG] Template: {template}")
-        logger.debug(f"[FILENAME-DEBUG] Rendered: {rendered_filename}")
-        logger.debug(f"[FILENAME-DEBUG] Full path: {filename}")
         
         # Select format with language preferences
         selected_format = None
@@ -1160,7 +1061,7 @@ class DownloadManager:
             video_prefs['preferred_quality'] = args.get('quality')
         
         if preferred_langs:
-            logger.debug(f"ðŸŽµ Preferred audio languages: {', '.join(preferred_langs)}")
+            logger.debug(f"🎵 Preferred audio languages: {', '.join(preferred_langs)}")
             
             # Try combined formats with language filtering first
             selected_combined = select_combined_with_lang(formats, video_prefs, preferred_langs)
@@ -1175,7 +1076,7 @@ class DownloadManager:
                 self.safe_db_operation("record_format_selection", self.db.record_format_selection,
                                      uid, vid, 'video_with_audio', selected_format, format_scores, format_prefs)
                 
-                logger.debug(f"ðŸ“¹ Using combined format: {selected_format} (language: {_fmt_audio_lang(selected_combined) or 'unknown'})")
+                logger.debug(f"📹 Using combined format: {selected_format} (language: {_fmt_audio_lang(selected_combined) or 'unknown'})")
             else:
                 # Try separate video+audio with language matching
                 video_fmt, audio_fmt = select_video_plus_audio_with_lang(formats, video_prefs, audio_prefs, preferred_langs)
@@ -1195,7 +1096,7 @@ class DownloadManager:
                     self.safe_db_operation("record_format_selection", self.db.record_format_selection,
                                          uid, vid, 'audio', audio_fmt.get('format_id'), a_scores, a_prefs)
                     
-                    logger.debug(f"ðŸ“¹ Using separate streams: {selected_format} (audio language: {_fmt_audio_lang(audio_fmt) or 'unknown'})")
+                    logger.debug(f"📹 Using separate streams: {selected_format} (audio language: {_fmt_audio_lang(audio_fmt) or 'unknown'})")
                 elif require_lang:
                     error_msg = f"Requested audio language(s) {preferred_langs} not available for this video"
                     self.safe_db_operation("log_event", self.db.log_event,
@@ -1205,7 +1106,7 @@ class DownloadManager:
         
         # Fallback to best available if no language match or no preference
         if not selected_format:
-            logger.debug("âš ï¸ No language match found, falling back to best quality")
+            logger.debug("⚠️ No language match found, falling back to best quality")
             default_combined, combined_list = select_combined_video_audio(formats, quality_override=args.get('quality'))
             if default_combined:
                 selected_format = default_combined.get('format_id')
@@ -1223,60 +1124,6 @@ class DownloadManager:
                                  uid, vid, jid, 'ERROR', {'error': error_msg, 'type': 'video_with_audio'})
             return False
         
-        # Check for existing media file before downloading
-        audio_lang = None
-        if format_method in ["combined_with_lang", "separate_with_lang"] and preferred_langs:
-            audio_lang = preferred_langs[0]  # Use first preferred language for checking
-        
-        existing_file = self.check_existing_media_file(uid, vid, 'video_with_audio', audio_lang, ext)
-        
-        if existing_file:
-            logger.info(f"[DEDUP] Found existing video+audio file in database: {existing_file['filename']}")
-            if self.verify_file_exists(existing_file['path']):
-                logger.info(f"[DEDUP] ✅ Skipping video+audio download - file already exists: {existing_file['path']}")
-                # Log the skip event
-                self.safe_db_operation("log_event", self.db.log_event,
-                                     uid, vid, jid, 'DOWNLOAD_SKIPPED',
-                                     {'reason': 'duplicate_exists', 'existing_file_id': existing_file['id'], 
-                                      'path': existing_file['path'], 'type': 'video_with_audio'})
-                return True  # Return success since we have the file
-            else:
-                logger.warning(f"[DEDUP] ⚠️ Database has existing record but file not found at old path: {existing_file['path']}")
-                
-                # Check if we can find the file anywhere in the downloads directory using the filename
-                base_downloads = Path(base_downloads_dir)
-                target_filename = existing_file['filename']
-                
-                logger.debug(f"[DEDUP] Searching for files in directory: {base_downloads}")
-                logger.debug(f"[DEDUP] Looking for filename: {target_filename}")
-                
-                # Use iterative search instead of glob to avoid special character issues
-                matching_files = []
-                try:
-                    for file_path in base_downloads.rglob("*"):
-                        if file_path.is_file() and file_path.name == target_filename:
-                            matching_files.append(file_path)
-                except Exception as e:
-                    logger.warning(f"[DEDUP] Error during file search: {e}")
-                
-                logger.debug(f"[DEDUP] Found {len(matching_files)} matching files: {[str(f) for f in matching_files]}")
-                
-                if matching_files:
-                    # Found the file in another location
-                    found_file = matching_files[0]  # Use the first match
-                    logger.info(f"[DEDUP] ✅ Found existing file in different location: {found_file}")
-                    logger.info(f"[DEDUP] ✅ Skipping video+audio download - file already exists elsewhere")
-                    
-                    # Log the skip event with the found path
-                    self.safe_db_operation("log_event", self.db.log_event,
-                                         uid, vid, jid, 'DOWNLOAD_SKIPPED',
-                                         {'reason': 'duplicate_exists_different_path', 'existing_file_id': existing_file['id'], 
-                                          'old_path': existing_file['path'], 'found_path': str(found_file), 'type': 'video_with_audio'})
-                    return True  # Return success since we have the file
-                else:
-                    logger.warning(f"[DEDUP] ⚠️ File not found anywhere in downloads directory - proceeding with download")
-                    # Continue with download since file is truly missing
-        
         # Perform download
         try:
             success = download_video_with_audio(url, args.get('quality') or "720p", filename, format_override=selected_format)
@@ -1284,28 +1131,6 @@ class DownloadManager:
             if success:
                 # Record successful download in database
                 file_path = Path(filename)
-                logger.debug(f"[MEDIAFILE-DEBUG] Checking file existence: {file_path}")
-                logger.debug(f"[MEDIAFILE-DEBUG] File exists: {file_path.exists()}")
-                
-                # If the expected file doesn't exist, look for the yt-dlp sanitized version
-                if not file_path.exists():
-                    # yt-dlp sanitizes filenames differently, try to find the actual file
-                    download_dir = file_path.parent
-                    expected_filename = file_path.name
-                    logger.debug(f"[MEDIAFILE-DEBUG] Expected file not found, searching in directory: {download_dir}")
-                    
-                    # Look for files with similar names (yt-dlp may have sanitized differently)
-                    if download_dir.exists():
-                        for actual_file in download_dir.iterdir():
-                            if actual_file.is_file() and actual_file.suffix == '.mp4':
-                                logger.debug(f"[MEDIAFILE-DEBUG] Found actual file: {actual_file.name}")
-                                # Use the first mp4 file found (should be our download)
-                                file_path = actual_file
-                                break
-                    
-                    logger.debug(f"[MEDIAFILE-DEBUG] Using actual file path: {file_path}")
-                    logger.debug(f"[MEDIAFILE-DEBUG] File exists now: {file_path.exists()}")
-                
                 if file_path.exists():
                     file_size = file_path.stat().st_size
                     file_name = file_path.name
@@ -1315,18 +1140,14 @@ class DownloadManager:
                     if format_method in ["combined_with_lang", "separate_with_lang"] and preferred_langs:
                         audio_lang = preferred_langs[0]  # Use first preferred language as recorded language
                     
-                    logger.debug(f"[MEDIAFILE-DEBUG] Registering media_file: user_id={uid}, video_uuid={vid}, kind=video_with_audio, path={str(file_path)}, filename={file_name}, ext=mp4, size_bytes={file_size}")
                     mid = self.safe_db_operation("record_media_file", self.db.record_media_file,
                                                uid, vid, 'video_with_audio', audio_lang, str(file_path), file_name,
                                                'mp4', file_size)  # Most video+audio downloads result in mp4
-                    logger.debug(f"[MEDIAFILE-DEBUG] record_media_file returned id: {mid}")
                     
                     self.safe_db_operation("log_event", self.db.log_event,
                                          uid, vid, jid, 'DOWNLOAD_COMPLETED',
                                          {'path': str(file_path), 'type': 'video_with_audio', 'format_method': format_method, 'format_id': selected_format})
                     logger.debug(f"Video+audio download logged in database: {file_path}")
-                else:
-                    logger.warning(f"[MEDIAFILE-DEBUG] File does not exist after download: {file_path}")
             
             return success
             
@@ -1535,11 +1356,11 @@ def download_audio_with_fallback(url: str, audio_formats: list, save_path: str, 
             selected_format = smart_audio_selection(remaining_formats, audio_prefs)
             
             if not selected_format:
-                print(f"ðŸ”„ No more audio formats to try (attempt {attempt + 1})")
+                print(f"🔄 No more audio formats to try (attempt {attempt + 1})")
                 continue
                 
             format_id = selected_format.get("format_id")
-            print(f"ðŸ”„ Audio format attempt {attempt + 1}: {format_id} - {selected_format.get('format_note')}")
+            print(f"🔄 Audio format attempt {attempt + 1}: {format_id} - {selected_format.get('format_note')}")
             
             # Try download with this format
             success = download_audio(url, format_id, save_path, max_retries, retry_delay)
@@ -1547,7 +1368,7 @@ def download_audio_with_fallback(url: str, audio_formats: list, save_path: str, 
                 return True
                 
         except Exception as e:
-            print(f"âŒ Audio format {attempt + 1} failed: {str(e)}")
+            print(f"❌ Audio format {attempt + 1} failed: {str(e)}")
             continue
     
     return False
@@ -1576,11 +1397,11 @@ def download_video_with_fallback(url: str, video_formats: list, save_path: str, 
             selected_format = smart_video_selection(remaining_formats, video_prefs)
             
             if not selected_format:
-                print(f"ðŸ”„ No more video formats to try (attempt {attempt + 1})")
+                print(f"🔄 No more video formats to try (attempt {attempt + 1})")
                 continue
                 
             format_id = selected_format.get("format_id")
-            print(f"ðŸ”„ Video format attempt {attempt + 1}: {format_id} - {selected_format.get('format_note')} - {selected_format.get('height')}p")
+            print(f"🔄 Video format attempt {attempt + 1}: {format_id} - {selected_format.get('format_note')} - {selected_format.get('height')}p")
             
             # Try download with this format
             success = download_video(url, format_id, save_path, max_retries, retry_delay)
@@ -1588,14 +1409,14 @@ def download_video_with_fallback(url: str, video_formats: list, save_path: str, 
                 return True
                 
         except Exception as e:
-            print(f"âŒ Video format {attempt + 1} failed: {str(e)}")
+            print(f"❌ Video format {attempt + 1} failed: {str(e)}")
             continue
     
     return False
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(
-        description="YouTube Downloader CLI â€” select language, quality, media types"
+        description="YouTube Downloader CLI — select language, quality, media types"
     )
 
     parser.add_argument("urls", nargs="*", help="YouTube video URL(s) or playlist URL(s) to process")
@@ -1634,7 +1455,7 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
         print(f"Processing: {url}")
         print(f"{'='*60}")
         
-        # ðŸ†• Use database-aware download manager for logging
+        # 🆕 Use database-aware download manager for logging
         from .download_manager import get_download_manager
         download_manager = get_download_manager()
         
@@ -1663,11 +1484,11 @@ def process_single_video(url: str, session_uuid: str, base_downloads_dir: str, a
             return process_info_only_mode(url, session_uuid, base_downloads_dir, args)
         
         # Use database-aware download for actual downloads
-        logger.info(f"ðŸ”„ Starting database-aware download for {url}")
+        logger.info(f"🔄 Starting database-aware download for {url}")
         return download_manager.run_download_with_db(url, session_uuid, base_downloads_dir, args_dict)
         
     except Exception as e:
-        print(f"ðŸ’¥ Error processing video {url}: {str(e)}")
+        print(f"💥 Error processing video {url}: {str(e)}")
         logger.error(f"Error processing video {url}: {str(e)}")
         return {"status": "error", "url": url, "error": str(e)}
 
@@ -1678,7 +1499,7 @@ def process_info_only_mode(url: str, session_uuid: str, base_downloads_dir: str,
         # Step 1: Fetch video info
         info = get_video_info(url)
         if info is None:
-            print("âŒ Failed to extract video information. Video may be private, deleted, or URL is invalid.")
+            print("❌ Failed to extract video information. Video may be private, deleted, or URL is invalid.")
             return {"status": "error", "error": "Failed to extract video info", "video_id": None, "title": None}
         
         print_basic_info(info)
@@ -1735,7 +1556,7 @@ def process_info_only_mode(url: str, session_uuid: str, base_downloads_dir: str,
         return {"status": "info_only", "video_id": info.get("id"), "title": info.get("title")}
 
     except Exception as e:
-        print(f"ðŸ’¥ Error processing video {url}: {str(e)}")
+        print(f"💥 Error processing video {url}: {str(e)}")
         return {"status": "error", "url": url, "error": str(e)}
 
 
@@ -1754,7 +1575,7 @@ def print_effective_config(args):
         
         # Show quality overrides
         if hasattr(args, 'quality') and args.quality:
-            print(f"\nðŸ”§ CLI Override: --quality {args.quality}")
+            print(f"\n🔧 CLI Override: --quality {args.quality}")
             if "quality_preferences" not in effective_config:
                 effective_config["quality_preferences"] = {}
             if "video" not in effective_config["quality_preferences"]:
@@ -1767,7 +1588,7 @@ def print_effective_config(args):
         
         # Show transcript formats overrides
         if hasattr(args, 'transcript_formats') and args.transcript_formats:
-            print(f"\nðŸ”§ CLI Override: --transcript-formats {args.transcript_formats}")
+            print(f"\n🔧 CLI Override: --transcript-formats {args.transcript_formats}")
             if "transcripts" not in effective_config:
                 effective_config["transcripts"] = {}
             if "processing" not in effective_config["transcripts"]:
@@ -1776,7 +1597,7 @@ def print_effective_config(args):
         
         # Show audio language overrides
         if hasattr(args, 'audio_lang') and args.audio_lang:
-            print(f"\nðŸ”§ CLI Override: --audio-lang {args.audio_lang}")
+            print(f"\n🔧 CLI Override: --audio-lang {args.audio_lang}")
             if "quality_preferences" not in effective_config:
                 effective_config["quality_preferences"] = {}
             if "audio" not in effective_config["quality_preferences"]:
@@ -1784,7 +1605,7 @@ def print_effective_config(args):
             effective_config["quality_preferences"]["audio"]["preferred_languages"] = args.audio_lang
         
         if hasattr(args, 'require_audio_lang') and args.require_audio_lang:
-            print(f"\nðŸ”§ CLI Override: --require-audio-lang")
+            print(f"\n🔧 CLI Override: --require-audio-lang")
             if "quality_preferences" not in effective_config:
                 effective_config["quality_preferences"] = {}
             if "audio" not in effective_config["quality_preferences"]:
@@ -1793,12 +1614,12 @@ def print_effective_config(args):
         
         # Show output directory override
         if hasattr(args, 'outdir') and args.outdir and args.outdir != ".":
-            print(f"\nðŸ”§ CLI Override: --outdir {args.outdir}")
+            print(f"\n🔧 CLI Override: --outdir {args.outdir}")
             effective_config["downloads"]["base_directory"] = args.outdir
         
         # Pretty print the effective configuration
         import json
-        print("\nðŸ“‹ Configuration JSON:")
+        print("\n📋 Configuration JSON:")
         print(json.dumps(effective_config, indent=2, ensure_ascii=False))
         
         # Show key selections that will be used
@@ -1810,19 +1631,19 @@ def print_effective_config(args):
         audio_prefs = effective_config.get("quality_preferences", {}).get("audio", {})
         transcript_prefs = effective_config.get("transcripts", {}).get("processing", {})
         
-        print(f"ðŸ“¹ Video Quality: {video_prefs.get('preferred_quality', 'DEFAULT')}")
-        print(f"ðŸŽµ Audio Quality: {audio_prefs.get('preferred_quality', 'DEFAULT')}")
-        print(f"ðŸŽµ Audio Languages: {audio_prefs.get('preferred_languages', ['DEFAULT'])}")
-        print(f"ðŸ”’ Require Audio Language: {audio_prefs.get('require_language_match', 'DEFAULT')}")
-        print(f"ðŸ“ Transcript Formats: {transcript_prefs.get('output_formats_list', ['DEFAULT'])}")
-        print(f"ðŸ“ Output Directory: {effective_config.get('downloads', {}).get('base_directory', 'DEFAULT')}")
-        print(f"ðŸ”§ Sanitize Filenames: {effective_config.get('behavior', {}).get('sanitize_filenames', 'DEFAULT')}")
-        print(f"ðŸ“ Max Filename Length: {effective_config.get('behavior', {}).get('max_filename_length', 'DEFAULT')}")
+        print(f"📹 Video Quality: {video_prefs.get('preferred_quality', 'DEFAULT')}")
+        print(f"🎵 Audio Quality: {audio_prefs.get('preferred_quality', 'DEFAULT')}")
+        print(f"🎵 Audio Languages: {audio_prefs.get('preferred_languages', ['DEFAULT'])}")
+        print(f"🔒 Require Audio Language: {audio_prefs.get('require_language_match', 'DEFAULT')}")
+        print(f"📝 Transcript Formats: {transcript_prefs.get('output_formats_list', ['DEFAULT'])}")
+        print(f"📁 Output Directory: {effective_config.get('downloads', {}).get('base_directory', 'DEFAULT')}")
+        print(f"🔧 Sanitize Filenames: {effective_config.get('behavior', {}).get('sanitize_filenames', 'DEFAULT')}")
+        print(f"📏 Max Filename Length: {effective_config.get('behavior', {}).get('max_filename_length', 'DEFAULT')}")
         
         print("=" * 60)
         
     except Exception as e:
-        print(f"âŒ Error loading configuration: {e}")
+        print(f"❌ Error loading configuration: {e}")
 
 
 def main():
@@ -1845,13 +1666,13 @@ def main():
             with open(args.batch_file, 'r', encoding='utf-8') as f:
                 batch_urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
                 urls_to_process.extend(batch_urls)
-                print(f"ðŸ“ Loaded {len(batch_urls)} URLs from batch file: {args.batch_file}")
+                print(f"📁 Loaded {len(batch_urls)} URLs from batch file: {args.batch_file}")
         except Exception as e:
-            print(f"âŒ Error reading batch file {args.batch_file}: {str(e)}")
+            print(f"❌ Error reading batch file {args.batch_file}: {str(e)}")
             return
     
     if not urls_to_process:
-        print("âŒ No URLs provided to process")
+        print("❌ No URLs provided to process")
         return
     
     # Step 2: Expand playlists and validate URLs
@@ -1861,10 +1682,10 @@ def main():
             expanded = expand_url(url, args.max_videos, args.playlist_start, args.playlist_end)
             expanded_urls.extend(expanded)
         except Exception as e:
-            print(f"âš ï¸ Error expanding URL {url}: {str(e)}")
+            print(f"⚠️ Error expanding URL {url}: {str(e)}")
             expanded_urls.append(url)  # Add as-is if expansion fails
     
-    print(f"\nðŸŽ¯ Total videos to process: {len(expanded_urls)}")
+    print(f"\n🎯 Total videos to process: {len(expanded_urls)}")
     
     # Step 3: Generate session UUID and determine output directory
     session_uuid = generate_session_uuid()
@@ -1883,7 +1704,7 @@ def main():
     total_processed = 0
     
     for i, url in enumerate(expanded_urls, 1):
-        print(f"\nðŸŽ¬ Processing video {i}/{len(expanded_urls)}")
+        print(f"\n🎬 Processing video {i}/{len(expanded_urls)}")
         result = process_single_video(url, session_uuid, base_downloads_dir, args)
         all_results.append(result)
         
@@ -1893,23 +1714,23 @@ def main():
     
     # Step 5: Final summary
     print(f"\n{'='*80}")
-    print(f"ðŸŽ¯ BATCH PROCESSING COMPLETE")
+    print(f"🎯 BATCH PROCESSING COMPLETE")
     print(f"{'='*80}")
-    print(f"ðŸ“Š Overall Summary:")
-    print(f"   â€¢ Videos processed: {len([r for r in all_results if r.get('status') in ['processed', 'info_only']])}/{len(expanded_urls)}")
-    print(f"   â€¢ Downloads successful: {total_success}/{total_processed}")
-    print(f"   â€¢ Session UUID: {session_uuid}")
-    print(f"   â€¢ Base directory: {base_downloads_dir}")
+    print(f"📊 Overall Summary:")
+    print(f"   • Videos processed: {len([r for r in all_results if r.get('status') in ['processed', 'info_only']])}/{len(expanded_urls)}")
+    print(f"   • Downloads successful: {total_success}/{total_processed}")
+    print(f"   • Session UUID: {session_uuid}")
+    print(f"   • Base directory: {base_downloads_dir}")
     
     # Show failed videos if any
     failed_videos = [r for r in all_results if r.get("status") == "error"]
     if failed_videos:
-        print(f"\nâŒ Failed videos ({len(failed_videos)}):")
+        print(f"\n❌ Failed videos ({len(failed_videos)}):")
         for failure in failed_videos:
-            print(f"   â€¢ {failure.get('url')}: {failure.get('error')}")
+            print(f"   • {failure.get('url')}: {failure.get('error')}")
     
-    print(f"\nâœ… Batch processing completed!")
-    print(f"ðŸ“ Structure: {base_downloads_dir}/{session_uuid}/[video_uuids]/[audio|video|transcripts]/")
+    print(f"\n✅ Batch processing completed!")
+    print(f"📁 Structure: {base_downloads_dir}/{session_uuid}/[video_uuids]/[audio|video|transcripts]/")
 
 
 def expand_url(url: str, max_videos: int = None, playlist_start: int = 1, playlist_end: int = None) -> list:
@@ -1944,9 +1765,9 @@ def expand_url(url: str, max_videos: int = None, playlist_start: int = 1, playli
                 entries = info['entries']
                 urls = []
                 
-                print(f"ðŸ“‹ Detected playlist: {info.get('title', 'Unknown playlist')}")
-                print(f"   â€¢ Total videos: {len(entries)}")
-                print(f"   â€¢ Processing range: {playlist_start} to {min(len(entries), playlist_end or len(entries))}")
+                print(f"📋 Detected playlist: {info.get('title', 'Unknown playlist')}")
+                print(f"   • Total videos: {len(entries)}")
+                print(f"   • Processing range: {playlist_start} to {min(len(entries), playlist_end or len(entries))}")
                 
                 for entry in entries:
                     if entry and entry.get('url'):
@@ -1954,14 +1775,14 @@ def expand_url(url: str, max_videos: int = None, playlist_start: int = 1, playli
                     elif entry and entry.get('id'):
                         urls.append(f"https://www.youtube.com/watch?v={entry['id']}")
                 
-                print(f"   â€¢ Expanded to {len(urls)} video URLs")
+                print(f"   • Expanded to {len(urls)} video URLs")
                 return urls
             else:
                 # Single video
                 return [url]
                 
     except Exception as e:
-        print(f"âš ï¸ Could not expand URL {url}: {str(e)}")
+        print(f"⚠️ Could not expand URL {url}: {str(e)}")
         return [url]  # Return as-is if expansion fails
 
 
@@ -1973,6 +1794,8 @@ if __name__ == "__main__":
 
 **Location**: `my_project/src/my_project/__main__.py`
 
+**Fixed Code**:
+
 ```python
 # __main_.py
 def main():
@@ -1981,7 +1804,7 @@ def main():
     from pathlib import Path
     
     # Look for .env file in parent directories
-    env_path = Path(__file__).parent.parent.parent / '.env'
+    env_path = Path(__file__).parent.parent.parent.parent / '.env'
     if env_path.exists():
         load_dotenv(env_path)
     else:
@@ -1994,11 +1817,228 @@ if __name__ == "__main__":
     main()
 ```
 
-## Key Files
+
+## 7) Retention policy (soft delete)
+
+- **Goal:** Free disk space without losing history or causing duplicate regeneration.
+- **Policy:** Never delete DB rows. Set `media_files.status='deleted'`, `deleted_at=NOW()` and (optionally) move files; transcripts are **kept forever**.
+- **Job (pseudo):**
+```python
+from db_port import get_db_port_from_env
+import pathlib, time
+
+RETENTION_DAYS = 60  # configure; transcripts are excluded
+
+# Your CLI scheduler can run this daily.
+# 1) List candidate media_files older than X days AND kind != 'transcript'.
+# 2) os.remove(path) or move to archive; then db.mark_media_deleted(media_file_id, file_moved_to=...)
+```
+
+---
+
+## 8) Notes on partitioning (plan‑ready)
+
+- You are **partition‑ready**: every high‑volume table carries `user_id` with indexes. When/if you hit scale, you can:
+  1) Create a shadow partitioned table, copy data, swap names (online via logical replication) **or**
+  2) Use `ALTER TABLE ... PARTITION BY HASH(user_id)` on empty tables before heavy writes.
+- If you do enable partitioning **now**, prefer it only for `media_files`, `events`, and `jobs`. Keep the base PKs simple for ease of coding. (Advanced setups add composite PKs including `user_id`.)
+
+---
+
+## 9) What’s left for later (optional)
+
+- Alembic migrations (versioning).
+- A tiny FTS service for transcript **full text** (if you decide to ingest full text into DB later).
+- A view or materialized view for “latest artifact per video”.
+- Error taxonomy for `events.event_type`.
+
+---
+
+## 10) Sanity checklist
+
+- [ ] Can connect to DB; `schema.sql` applied.
+- [ ] Adapter defaults to **NullDbPort** when disabled.
+- [ ] Single anonymous user row present.
+- [ ] Unique media variant guard in place.
+- [ ] Fallback warning logged when language mismatches.
+- [ ] Transcripts stored forever (path + optional summary only).
+- [ ] Short retry loop works (simulate a transient failure; ensure no crash).
+
+---
+
+## Database Schema Verification
+
+### Table Structure Confirmed
+The following tables exist and are properly configured:
+
+1. **platform_users** - User management
+2. **sessions** - Download session tracking
+3. **jobs** - Individual download job tracking
+4. **videos** - Video metadata storage
+5. **media_files** - Downloaded file information
+6. **events** - Event logging
+7. **transcripts** - Transcript file tracking
+8. **format_selection** - Format selection logging
+
+### Key Schema Details
+- All UUID primary keys have `uuid_generate_v4()` defaults
+- Format selection scores use `NUMERIC` data type
+- Proper foreign key relationships established
+- JSONB columns for flexible metadata storage
+
+## Environment Configuration
+
+### .env File Setup
+**Location**: `../.env` (parent directory of my_project)
+
+```env
+DATABASE_ENABLED=true
+DATABASE_URL=postgresql+psycopg://postgres:Rqerjme1itm@localhost:5432/yt_app
+```
+
+**Note**: The password was updated from `postgres` to `Rqerjme1itm` during testing.
+
+## Testing and Validation
+
+### Test Scripts Created
+1. **check_db.py** - Basic database connectivity and table verification
+2. **check_schema.py** - Detailed table structure analysis
+3. **check_jobs.py** - Job and event logging verification
+
+### Test Results
+✅ **All Database Operations Working**:
+- `ensure_anonymous_user` - OK
+- `begin_session` - OK  
+- `create_job` - OK
+- `upsert_video` - OK
+- `log_event` - OK
+- `record_format_selection` - OK 
+- `update_job` - OK
+- `end_session` - OK
+
+### Sample Database Logging Output
+```
+Recent Jobs:
+Job ID: 117d59cd-9565-4c2d-918f-e86b06bdf198
+URL: https://www.youtube.com/watch?v=KYT3NiqI-X8
+Status: succeeded (100%)
+Message: OK
+Created: 2025-09-03 17:52:28.628210+01:00
+Video: SpaceX's Tenth Starship Flight Test: Everything That Happened in 6 Minutes (KYT3NiqI-X8)
+
+Recent Events:
+2025-09-03 17:52:31.265617+01:00: INFO_FETCHED - {'id': 'KYT3NiqI-X8'}
+```
+
+## Error Handling and Graceful Degradation
+
+### Safe Database Operations
+The system implements a `safe_db_operation` wrapper that:
+- Prevents application crashes due to database issues
+- Logs warnings for failed database operations
+- Allows downloads to continue even if database logging fails
+- Falls back to `NullDbPort` if database connection fails
+
+### Database Connection Fallback
+```python
+def get_db_port_from_env() -> DbPort:
+    enabled = os.getenv('DATABASE_ENABLED', 'false').lower() in ('1','true','yes','on')
+    url = os.getenv('DATABASE_URL')
+    if not enabled or not url:
+        return NullDbPort()
+    try:
+        return PostgresDbPort(url)
+    except Exception:
+        # never break the app
+        return NullDbPort()
+```
+
+## Reproducibility Instructions
+
+### Prerequisites
+1. PostgreSQL database running on localhost:5432
+2. Database `yt_app` created
+3. User `postgres` with password `Rqerjme1itm` (or update .env file)
+4. Python virtual environment activated
+5. All dependencies installed via `pip install -r requirements.txt`
+
+### Setup Steps
+1. **Environment Configuration**:
+   ```bash
+   # Create .env file in project root
+   echo "DATABASE_ENABLED=true" > .env
+   echo "DATABASE_URL=postgresql+psycopg://postgres:YOUR_PASSWORD@localhost:5432/yt_app" >> .env
+   ```
+
+2. **Database Schema Creation**:
+   ```bash
+   # Run the schema creation script
+   psql -U postgres -d yt_app -f my_project/src/my_project/db/schema.sql
+   ```
+
+3. **Activate Virtual Environment**:
+   ```bash
+   # Windows PowerShell
+   .venv\Scripts\Activate.ps1
+   
+   # Or activate and run in one command
+   .venv\Scripts\python.exe -m src.my_project [URL] [options]
+   ```
+
+### Testing Commands
+```bash
+# Test basic database connectivity
+python check_db.py
+
+# Test schema structure
+python check_schema.py
+
+# Test job logging
+python check_jobs.py
+
+# Test actual download with database logging
+python -m src.my_project https://www.youtube.com/watch?v=KYT3NiqI-X8 --audio
+```
+
+## Key Files Modified
 
 1. **my_project/src/my_project/__main__.py** - Environment loading fix
 2. **my_project/src/my_project/db/models.py** - Schema fixes and UUID defaults
 3. **my_project/src/my_project/core_CLI.py** - Database integration
 4. **my_project/src/my_project/download_manager.py** - New file for database-aware downloads
 
+## Key Files Created
 
+1. **my_project/src/my_project/download_manager.py** - Main database integration logic
+2. **my_project/check_db.py** - Database connectivity testing
+3. **my_project/check_schema.py** - Schema verification
+4. **my_project/check_jobs.py** - Job logging verification
+
+## Dependencies
+
+The following packages are required and should be in `requirements.txt`:
+```
+yt-dlp>=2023.12.30
+youtube-transcript-api>=0.6.2
+colorama>=0.4.6
+sqlalchemy>=2.0
+psycopg[binary]
+python-dotenv
+```
+
+## Success Metrics
+
+✅ **Database Connection**: Successfully connects to PostgreSQL
+✅ **Job Logging**: All download jobs are recorded with status tracking
+✅ **Event Logging**: All significant events are logged with timestamps
+✅ **Video Metadata**: Video information is stored and linked to jobs
+✅ **Format Selection**: Format choices are logged with scoring information
+✅ **Error Handling**: Failed operations are logged without breaking the application
+✅ **Graceful Degradation**: System continues to work even if database is unavailable
+
+## Conclusion
+
+The database integration has been successfully implemented with comprehensive logging of all download operations. The system now provides full traceability of downloads, user sessions, and file management while maintaining robust error handling and graceful degradation capabilities.
+
+The implementation follows production-ready patterns with proper separation of concerns, comprehensive error handling, and maintainable code structure. All database operations are logged and can be monitored for debugging and analytics purposes.
+ ---

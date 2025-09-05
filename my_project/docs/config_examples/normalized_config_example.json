@@ -1,0 +1,38 @@
+{
+  "comment": "✅ AFTER FIX: Legacy config is automatically normalized to modern format",
+  "downloads": {
+    "base_directory": "my_youtube_downloads",
+    "audio": {
+      "format": "mp3",
+      "quality": "192"
+    },
+    "video": {
+      "format": "mp4",
+      "quality": "720p"
+    }
+  },
+  "automatically_mapped_to": {
+    "quality_preferences": {
+      "audio": {
+        "preferred_formats": ["mp3", "m4a", "ogg"],
+        "preferred_quality": "medium",
+        "preferred_bitrate": "192",
+        "fallback_qualities": ["medium", "low", "high"],
+        "max_fallback_attempts": 3
+      },
+      "video": {
+        "preferred_formats": ["mp4", "webm", "mkv"],
+        "preferred_quality": "720p",
+        "fallback_qualities": ["720p", "480p", "360p", "1080p"],
+        "max_fallback_attempts": 3
+      }
+    }
+  },
+  "benefits": {
+    "user_intent_preserved": "MP3 format preference is honored",
+    "quality_mapping": "192 bitrate correctly mapped to 'medium' quality",
+    "fallback_safety": "Sensible fallbacks generated automatically",
+    "cli_override_works": "--quality still overrides config preferences",
+    "backward_compatible": "Modern quality_preferences.* format still works"
+  }
+}
