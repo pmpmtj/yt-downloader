@@ -1,0 +1,8 @@
+﻿# YouTube Downloader Dependencies
+# Use pyproject.toml for package management - this file is for development/testing
+yt-dlp>=2023.12.30
+youtube-transcript-api>=0.6.2
+colorama>=0.4.6
+sqlalchemy>=2.0
+psycopg[binary]
+python-dotenv
