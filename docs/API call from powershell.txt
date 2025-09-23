@@ -1,0 +1,16 @@
+# Define the API endpoint
+$uri = "http://127.0.0.1:8000/api/download-audio/"
+
+# Define the payload
+$body = @{
+    url = "https://www.youtube.com/watch?v=XNNjYas8Xo8"
+}
+
+# Convert the payload to JSON
+$jsonBody = $body | ConvertTo-Json
+
+# Send the POST request
+$response = Invoke-RestMethod -Uri $uri -Method Post -Body $jsonBody -ContentType "application/json"
+
+# Display the response
+$response

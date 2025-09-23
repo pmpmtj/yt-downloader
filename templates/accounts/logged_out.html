@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Logged Out - YouTube Downloader{% endblock %}
+
+{% block content %}
+
+<h1>You are logged out</h1>
+
+
+
+<div class="text-center mt-4">
+    <p>Thank you for using YouTube Downloader!</p>
+    <p>You can sign in again anytime.</p>
+    
+    <div class="mt-4">
+        <a href="{% url 'accounts:login' %}" class="btn">Sign In Again</a>
+
+    </div>
+    
+    <div class="mt-4">
+        <a href="/" class="btn btn-secondary">Go to Main Page</a>
+    </div>
+</div>
+{% endblock %}

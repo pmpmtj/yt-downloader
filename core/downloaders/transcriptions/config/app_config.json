@@ -1,0 +1,82 @@
+{    
+    "transcripts": {
+        "preferred_languages": ["en", "en-US", "en-GB"],
+        "include_timestamps": true,
+        "fallback_to_auto_generated": true,
+        "max_fallback_attempts": 3,
+        "processing": {
+            "output_formats": {
+                "clean": true,
+                "timestamped": true,
+                "structured": true
+            },
+            "text_cleaning": {
+                "enabled": true,
+                "remove_filler_words": true,
+                "normalize_whitespace": true,
+                "fix_transcription_artifacts": true,
+                "filler_words": ["um", "uh", "like", "you know", "so", "well", "actually", "basically", "literally"]
+            },
+            "chapter_detection": {
+                "enabled": true,
+                "min_silence_gap_seconds": 3.0,
+                "min_chapter_length_seconds": 30.0,
+                "include_chapter_summaries": true
+            },
+            "preview": {
+                "max_lines": 10,
+                "include_stats": true,
+                "include_quality_indicators": true
+            }
+        }
+    },
+    "metadata_collection": {
+        "enabled": true,
+        "content_analysis": {
+            "extract_topics": true,
+            "analyze_sentiment": false,
+            "detect_language": true,
+            "extract_keywords": true,
+            "content_categorization": true,
+            "stop_words": [
+                "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with",
+                "by", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had",
+                "do", "does", "did", "will", "would", "could", "should", "may", "might", "must",
+                "this", "that", "these", "those", "i", "you", "he", "she", "it", "we", "they",
+                "me", "him", "her", "us", "them", "my", "your", "his", "her", "its", "our", "their"
+            ]
+        },
+        "video_metadata": {
+            "detailed_description": true,
+            "channel_info": true,
+            "engagement_metrics": true,
+            "technical_details": true,
+            "thumbnail_info": true
+        },
+        "quality_assessment": {
+            "content_quality_score": true,
+            "transcript_confidence": true,
+            "audio_video_sync": true,
+            "completeness_check": true
+        },
+        "export_options": {
+            "include_in_structured": true,
+            "separate_metadata_file": false,
+            "csv_summary": false,
+            "markdown_report": false
+        }
+    },
+    "logging": {
+        "log_downloads": true,
+        "log_format_selections": true,
+        "log_errors": true,
+        "log_network_requests": true,
+        "log_file_operations": true
+    },
+    "behavior": {
+        "overwrite_existing_files": false,
+        "sanitize_filenames": true,
+        "max_filename_length": 255,
+        "validate_urls": true
+    }
+}

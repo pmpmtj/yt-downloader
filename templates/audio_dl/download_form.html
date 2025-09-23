@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Download Audio - YouTube Downloader{% endblock %}
+
+{% block nav_links %}
+<a href="{% url 'accounts:dashboard' %}" class="btn-link" style="margin-right: 1rem;">Back to Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<h1>Download YouTube Audio</h1>
+
+
+{% if download_stats %}
+<div class="alert alert-info">
+    <strong>Download Quota:</strong> You have {{ download_stats.downloads_remaining }} downloads remaining this hour.
+    {% if not ip_allowed %}
+    <br><span class="text-warning">⚠️ Rate limit reached. Please wait before downloading again.</span>
+    {% endif %}
+</div>
+{% endif %}
+
+
+
+<form method="post" id="downloadForm">
+    {% csrf_token %}
+    <div class="form-group">
+        <input type="url" name="url" placeholder="Paste YouTube URL…" required class="form-control" />
+    </div>
+    
+    <div class="form-group">
+        <div class="checkbox-container">
+            <label class="checkbox-label">
+                <input type="checkbox" name="download_to_remote" id="downloadToggle" checked>
+                Download to my computer
+            </label>
+            <small class="text-muted">Uncheck to save to server only</small>
+        </div>
+    </div>
+    
+    <button type="submit" class="btn btn-block" id="downloadBtn">Download Audio</button>
+</form>
+
+<small class="text-muted" id="downloadDescription">The best available audio; will download directly to your computer.</small>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('downloadToggle');
+    const description = document.getElementById('downloadDescription');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadForm = document.getElementById('downloadForm');
+    
+    function updateDescription() {
+        if (checkbox.checked) {
+            description.textContent = 'The best available audio; will download directly to your computer.';
+        } else {
+            description.textContent = 'The best available audio; will be saved to the server only.';
+        }
+    }
+    
+    function disableButton() {
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<span class="spinner"></span>Downloading...';
+        downloadBtn.classList.add('btn-loading');
+    }
+    
+    function enableButton() {
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = 'Download Audio';
+        downloadBtn.classList.remove('btn-loading');
+    }
+    
+    checkbox.addEventListener('change', updateDescription);
+    
+    // Handle form submission
+    downloadForm.addEventListener('submit', function(e) {
+        // Disable button immediately on form submit
+        disableButton();
+        
+        // Re-enable button after a delay (in case of errors)
+        setTimeout(function() {
+            enableButton();
+        }, 3000); // 3 second delay
+    });
+    
+    // Initialize description on page load
+    updateDescription();
+});
+</script>
+{% endblock %}

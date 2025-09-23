@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cookie Management - YouTube Downloader{% endblock %}
+
+{% block nav_links %}
+<a href="{% url 'accounts:dashboard' %}" class="btn-link" style="margin-right: 1rem;">Back to Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-cookie-bite"></i> YouTube Cookie Management
+                    </h4>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Cookie Status -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Why do I need cookies?</h6>
+                        <p class="mb-0">
+                            YouTube uses bot detection that can block automated downloads. 
+                            Your browser cookies help authenticate your requests, making downloads more reliable.
+                        </p>
+                    </div>
+
+                    {% if cookie_status.has_cookies %}
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle"></i> Cookies Active</h6>
+                        <p class="mb-1">
+                            <strong>Source:</strong> {{ cookie_status.source|title }}<br>
+                            <strong>Uploaded:</strong> {{ cookie_status.uploaded_at|date:"M d, Y H:i" }}<br>
+                            <strong>Expires:</strong> {{ cookie_status.expires_at|date:"M d, Y H:i" }}
+                        </p>
+                        <p class="mb-0">
+                            <span class="badge badge-success">
+                                {{ cookie_status.expires_in_hours|floatformat:1 }} hours remaining
+                            </span>
+                        </p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> No Active Cookies</h6>
+                        <p class="mb-0">
+                            Upload your YouTube cookies to enable reliable downloads and bypass bot detection.
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Upload Methods -->
+                    <div class="row">
+                        <!-- File Upload -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-upload"></i> Upload Cookie File</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" action="{% url 'accounts:upload_cookies' %}" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="cookie_file">Select cookies.txt file:</label>
+                                            <input type="file" class="form-control-file" id="cookie_file" name="cookie_file" 
+                                                   accept=".txt" required>
+                                            <small class="form-text text-muted">
+                                                Export cookies from your browser in Netscape format
+                                            </small>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-block">
+                                            <i class="fas fa-upload"></i> Upload Cookies
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paste Cookies -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-paste"></i> Paste Cookie Content</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" action="{% url 'accounts:paste_cookies' %}">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label for="cookie_content">Paste cookies.txt content:</label>
+                                            <textarea class="form-control" id="cookie_content" name="cookie_content" 
+                                                      rows="6" placeholder="# Netscape HTTP Cookie File&#10;# This is a generated file! Do not edit.&#10;.youtube.com	TRUE	/	FALSE	1234567890	VISITOR_INFO1_LIVE	abc123..."></textarea>
+                                            <small class="form-text text-muted">
+                                                Copy and paste the contents of your cookies.txt file
+                                            </small>
+                                        </div>
+                                        <button type="submit" class="btn btn-secondary btn-block">
+                                            <i class="fas fa-paste"></i> Paste Cookies
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="mt-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-question-circle"></i> How to Export Cookies</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Chrome/Edge:</h6>
+                                        <ol>
+                                            <li>Install "Get cookies.txt" extension</li>
+                                            <li>Go to YouTube.com</li>
+                                            <li>Click the extension icon</li>
+                                            <li>Click "Export" and save as cookies.txt</li>
+                                        </ol>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Firefox:</h6>
+                                        <ol>
+                                            <li>Install "cookies.txt" extension</li>
+                                            <li>Go to YouTube.com</li>
+                                            <li>Right-click → "Export cookies"</li>
+                                            <li>Save as cookies.txt</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                                <div class="alert alert-warning mt-3">
+                                    <strong>Important:</strong> Make sure you're logged into YouTube in your browser before exporting cookies.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-4">
+                        {% if cookie_status.has_cookies %}
+                        <form method="post" action="{% url 'accounts:delete_cookies' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-block" 
+                                    onclick="return confirm('Are you sure you want to delete your cookies?')">
+                                <i class="fas fa-trash"></i> Delete Cookies
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh cookie status every 5 minutes
+setInterval(function() {
+    fetch('{% url "accounts:cookie_api" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.has_cookies !== {{ cookie_status.has_cookies|yesno:"true,false" }}) {
+                location.reload();
+            }
+        })
+        .catch(error => console.log('Cookie status check failed:', error));
+}, 300000); // 5 minutes
+</script>
+{% endblock %}

@@ -1,0 +1,32 @@
+{
+    "logging": {
+        "file": {
+            "level": "DEBUG",
+            "format": "%(asctime)s - %(name)s - %(levelname)s - [%(module)s:%(lineno)d] - %(message)s",
+            "date_format": "%Y-%m-%d %H:%M:%S",
+            "log_filename": "module.log",
+            "max_size_bytes": 1048576,
+            "backup_count": 5,
+            "encoding": "utf-8"
+        },
+        "console": {
+            "level": "DEBUG",
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            "date_format": "%H:%M:%S"
+        },
+        "modules": {
+            "default": {
+                "level": "INFO",
+                "log_filename": "default.log"
+            },
+            "dl_transcription": {
+                "level": "DEBUG", 
+                "log_filename": "dl_transcription.log"
+            },
+            "yt_downloads_utils": {
+                "level": "DEBUG",
+                "log_filename": "downloads.log"
+            }
+        }
+    }
+}

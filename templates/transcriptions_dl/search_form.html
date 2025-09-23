@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Search Transcripts{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .search-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .search-form {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .form-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #e1e5e9;
+        border-radius: 5px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .search-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+    
+    .search-results {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .result-item {
+        padding: 20px;
+        border-bottom: 1px solid #e1e5e9;
+        transition: background-color 0.3s;
+    }
+    
+    .result-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .result-item:last-child {
+        border-bottom: none;
+    }
+    
+    .video-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+    
+    .video-meta {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 10px;
+        font-size: 14px;
+        color: #666;
+        flex-wrap: wrap;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .matching-segments {
+        margin-top: 15px;
+    }
+    
+    .segment {
+        background: #f8f9fa;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .segment-time {
+        font-size: 12px;
+        color: #666;
+        font-weight: 600;
+    }
+    
+    .segment-text {
+        margin-top: 5px;
+        line-height: 1.4;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 30px;
+    }
+    
+    .pagination a, .pagination span {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        text-decoration: none;
+        color: #333;
+    }
+    
+    .pagination .current {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    
+    .stats-sidebar {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .stats-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #333;
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid #e1e5e9;
+    }
+    
+    .stat-label {
+        font-weight: 500;
+        color: #666;
+    }
+    
+    .stat-value {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+    
+    .no-results i {
+        font-size: 48px;
+        color: #ddd;
+        margin-bottom: 20px;
+    }
+    
+    .filter-toggle {
+        background: #e9ecef;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-bottom: 20px;
+    }
+    
+    .filters-section {
+        display: none;
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .filters-section.show {
+        display: block;
+    }
+    
+    @media (max-width: 768px) {
+        .form-row {
+            flex-direction: column;
+        }
+        
+        .search-buttons {
+            flex-direction: column;
+        }
+        
+        .video-meta {
+            flex-direction: column;
+            gap: 5px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <!-- Search Header -->
+    <div class="search-header">
+        <h1><i class="fas fa-search"></i> Search Transcripts</h1>
+        <p>Find specific content across all your downloaded transcripts</p>
+    </div>
+
+    <!-- Search Form -->
+    <div class="search-form">
+        <form method="GET" id="searchForm">
+            <!-- Main Search -->
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <label for="q">Search Query</label>
+                    <input type="text" id="q" name="q" class="form-control" 
+                           value="{{ query }}" placeholder="Enter search terms...">
+                </div>
+                <div class="form-group">
+                    <label for="type">Search Type</label>
+                    <select id="type" name="type" class="form-control">
+                        <option value="full_text" {% if search_type == 'full_text' %}selected{% endif %}>Full Text</option>
+                        <option value="exact" {% if search_type == 'exact' %}selected{% endif %}>Exact Match</option>
+                        <option value="fuzzy" {% if search_type == 'fuzzy' %}selected{% endif %}>Fuzzy Search</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sort">Sort By</label>
+                    <select id="sort" name="sort" class="form-control">
+                        <option value="relevance" {% if current_filters.sort == 'relevance' %}selected{% endif %}>Relevance</option>
+                        <option value="date" {% if current_filters.sort == 'date' %}selected{% endif %}>Date</option>
+                        <option value="duration" {% if current_filters.sort == 'duration' %}selected{% endif %}>Duration</option>
+                        <option value="title" {% if current_filters.sort == 'title' %}selected{% endif %}>Title</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Advanced Filters Toggle -->
+            <button type="button" class="filter-toggle" onclick="toggleFilters()">
+                <i class="fas fa-filter"></i> Advanced Filters
+            </button>
+
+            <!-- Advanced Filters -->
+            <div class="filters-section" id="filtersSection">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="title">Video Title</label>
+                        <input type="text" id="title" name="title" class="form-control" 
+                               value="{{ current_filters.title }}" placeholder="Filter by title...">
+                    </div>
+                    <div class="form-group">
+                        <label for="uploader">Uploader</label>
+                        <input type="text" id="uploader" name="uploader" class="form-control" 
+                               value="{{ current_filters.uploader }}" placeholder="Filter by channel...">
+                    </div>
+                    <div class="form-group">
+                        <label for="language">Language</label>
+                        <select id="language" name="language" class="form-control">
+                            <option value="">All Languages</option>
+                            {% for lang in available_languages %}
+                                <option value="{{ lang }}" {% if current_filters.language == lang %}selected{% endif %}>
+                                    {{ lang|upper }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date_from">From Date</label>
+                        <input type="date" id="date_from" name="date_from" class="form-control" 
+                               value="{{ current_filters.date_from }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="date_to">To Date</label>
+                        <input type="date" id="date_to" name="date_to" class="form-control" 
+                               value="{{ current_filters.date_to }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="is_generated">Content Type</label>
+                        <select id="is_generated" name="is_generated" class="form-control">
+                            <option value="">All Types</option>
+                            <option value="false" {% if current_filters.is_generated == False %}selected{% endif %}>Manual</option>
+                            <option value="true" {% if current_filters.is_generated == True %}selected{% endif %}>Auto-generated</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="duration_min">Min Duration (seconds)</label>
+                        <input type="number" id="duration_min" name="duration_min" class="form-control" 
+                               value="{{ current_filters.duration_min }}" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="duration_max">Max Duration (seconds)</label>
+                        <input type="number" id="duration_max" name="duration_max" class="form-control" 
+                               value="{{ current_filters.duration_max }}" placeholder="3600">
+                    </div>
+                    <div class="form-group">
+                        <label for="time_start">Time Range Start (seconds)</label>
+                        <input type="number" id="time_start" name="time_start" class="form-control" 
+                               value="{{ current_filters.time_start }}" placeholder="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="time_end">Time Range End (seconds)</label>
+                        <input type="number" id="time_end" name="time_end" class="form-control" 
+                               value="{{ current_filters.time_end }}" placeholder="300" step="0.1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Buttons -->
+            <div class="search-buttons">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <a href="{% url 'transcriptions_dl:search_transcripts' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- User Stats Sidebar -->
+    {% if user_stats %}
+    <div class="stats-sidebar">
+        <div class="stats-title">Your Transcript Library</div>
+        <div class="stat-item">
+            <span class="stat-label">Total Videos:</span>
+            <span class="stat-value">{{ user_stats.total_videos }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Total Segments:</span>
+            <span class="stat-value">{{ user_stats.total_segments }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Total Chapters:</span>
+            <span class="stat-value">{{ user_stats.total_chapters }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Total Duration:</span>
+            <span class="stat-value">{{ user_stats.total_duration_s|floatformat:0 }}s</span>
+        </div>
+        {% if user_stats.languages %}
+        <div class="stat-item">
+            <span class="stat-label">Languages:</span>
+            <span class="stat-value">{{ user_stats.languages|join:", " }}</span>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Search Results -->
+    {% if search_results %}
+    <div class="search-results">
+        <div style="padding: 20px; border-bottom: 1px solid #e1e5e9; background: #f8f9fa;">
+            {% if query %}
+            <h3>Search Results</h3>
+            <p>
+                Found {{ search_results.total_count }} result{{ search_results.total_count|pluralize }} 
+                for "{{ query }}"
+                (Page {{ search_results.page }} of {{ search_results.total_pages }})
+            </p>
+            {% else %}
+            <h3>Your Recent Transcripts</h3>
+            <p>
+                Showing {{ search_results.total_count }} video{{ search_results.total_count|pluralize }} 
+                from your library (Page {{ search_results.page }} of {{ search_results.total_pages }})
+            </p>
+            <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                💡 Use the search box above to find specific content within your transcripts
+            </p>
+            {% endif %}
+        </div>
+
+        {% for result in search_results.results %}
+        <div class="result-item">
+            <div class="video-title">
+                <a href="{% url 'transcriptions_dl:get_transcript_content_api' result.video.video_id %}?format=clean_text" 
+                   target="_blank">
+                    {{ result.video.title }}
+                </a>
+            </div>
+            
+            <div class="video-meta">
+                <div class="meta-item">
+                    <i class="fas fa-clock"></i>
+                    <span>{{ result.video.duration_s|floatformat:0 }}s</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-user"></i>
+                    <span>{{ result.video.uploader|default:"Unknown" }}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>{{ result.video.processed_at|date:"M d, Y" }}</span>
+                </div>
+                {% if result.video.language_code %}
+                <div class="meta-item">
+                    <i class="fas fa-globe"></i>
+                    <span>{{ result.video.language_code|upper }}</span>
+                </div>
+                {% endif %}
+                <div class="meta-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span>{{ result.total_segments }} segments</span>
+                </div>
+            </div>
+
+            {% if result.matching_segments %}
+            <div class="matching-segments">
+                <h5>Matching Segments:</h5>
+                {% for segment in result.matching_segments|slice:":3" %}
+                <div class="segment">
+                    <div class="segment-time">
+                        {{ segment.start_time_s|floatformat:1 }}s - {{ segment.duration_s|floatformat:1 }}s
+                    </div>
+                    <div class="segment-text">{{ segment.text|truncatewords:30 }}</div>
+                </div>
+                {% endfor %}
+                {% if result.matching_segments|length > 3 %}
+                <p style="text-align: center; margin-top: 10px; color: #666;">
+                    ... and {{ result.matching_segments|length|add:"-3" }} more segments
+                </p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <!-- Pagination -->
+        {% if search_results.total_pages > 1 %}
+        <div class="pagination">
+            {% if search_results.has_previous %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ search_results.page|add:'-1' }}">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            {% endif %}
+            
+            <span class="current">Page {{ search_results.page }} of {{ search_results.total_pages }}</span>
+            
+            {% if search_results.has_next %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ search_results.page|add:'1' }}">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% elif query or current_filters.title or current_filters.uploader %}
+    <div class="search-results">
+        <div class="no-results">
+            <i class="fas fa-search"></i>
+            <h3>No Results Found</h3>
+            <p>Try adjusting your search terms or filters.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleFilters() {
+    const filtersSection = document.getElementById('filtersSection');
+    filtersSection.classList.toggle('show');
+}
+
+// Auto-submit form on Enter key in search box
+document.getElementById('q').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('searchForm').submit();
+    }
+});
+
+// Show filters if any are filled
+document.addEventListener('DOMContentLoaded', function() {
+    const filters = ['title', 'uploader', 'date_from', 'date_to', 'duration_min', 'duration_max', 'time_start', 'time_end', 'language', 'is_generated'];
+    const hasFilters = filters.some(filter => document.getElementById(filter).value);
+    if (hasFilters) {
+        document.getElementById('filtersSection').classList.add('show');
+    }
+});
+</script>
+{% endblock %}

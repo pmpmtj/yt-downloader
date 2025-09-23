@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Download Transcripts - YouTube Downloader{% endblock %}
+
+{% block nav_links %}
+<a href="{% url 'accounts:dashboard' %}" class="btn-link" style="margin-right: 1rem;">Back to Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<h1>Download YouTube Transcripts</h1>
+
+{% if download_stats %}
+<div class="alert alert-info">
+    <strong>Download Quota:</strong> You have {{ download_stats.downloads_remaining }} downloads remaining this hour.
+    {% if not ip_allowed %}
+    <br><span class="text-warning">⚠️ Rate limit reached. Please wait before downloading again.</span>
+    {% endif %}
+</div>
+{% endif %}
+
+<form method="post" id="downloadForm">
+    {% csrf_token %}
+    <div class="form-group">
+        <input type="url" name="url" placeholder="Paste YouTube URL…" required class="form-control" />
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label">Select Transcript Formats:</label>
+        <div class="checkbox-container">
+            <label class="checkbox-label">
+                <input type="checkbox" name="formats" value="clean" checked>
+                <strong>Clean Text</strong> - LLM-optimized format (filler words removed)
+            </label>
+        </div>
+        <div class="checkbox-container">
+            <label class="checkbox-label">
+                <input type="checkbox" name="formats" value="timestamped" checked>
+                <strong>Timestamped Text</strong> - Original format with timestamps
+            </label>
+        </div>
+        <div class="checkbox-container">
+            <label class="checkbox-label">
+                <input type="checkbox" name="formats" value="structured" checked>
+                <strong>Structured JSON</strong> - Rich metadata with analysis
+            </label>
+        </div>
+    </div>
+    
+    <button type="submit" class="btn btn-block" id="downloadBtn">Download Transcripts</button>
+</form>
+
+<small class="text-muted" id="downloadDescription">All selected formats will be saved to the server.</small>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const description = document.getElementById('downloadDescription');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadForm = document.getElementById('downloadForm');
+    const formatCheckboxes = document.querySelectorAll('input[name="formats"]');
+    
+    function updateDescription() {
+        const selectedFormats = Array.from(formatCheckboxes).filter(cb => cb.checked);
+        const formatNames = selectedFormats.map(cb => {
+            switch(cb.value) {
+                case 'clean': return 'Clean Text';
+                case 'timestamped': return 'Timestamped Text';
+                case 'structured': return 'Structured JSON';
+                default: return cb.value;
+            }
+        });
+        
+        if (selectedFormats.length > 1) {
+            description.textContent = `Selected formats (${selectedFormats.length}): ${formatNames.join(', ')} - will be saved to the server.`;
+        } else if (selectedFormats.length === 1) {
+            description.textContent = `${formatNames[0]} format will be saved to the server.`;
+        } else {
+            description.textContent = 'Please select at least one format.';
+        }
+    }
+    
+    function disableButton() {
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<span class="spinner"></span>Processing...';
+        downloadBtn.classList.add('btn-loading');
+    }
+    
+    function enableButton() {
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = 'Download Transcripts';
+        downloadBtn.classList.remove('btn-loading');
+    }
+    
+    function validateForm() {
+        const selectedFormats = Array.from(formatCheckboxes).filter(cb => cb.checked);
+        return selectedFormats.length > 0;
+    }
+    
+    // Event listeners
+    formatCheckboxes.forEach(cb => cb.addEventListener('change', updateDescription));
+    
+    // Handle form submission
+    downloadForm.addEventListener('submit', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+            alert('Please select at least one transcript format.');
+            return;
+        }
+        
+        // Disable button immediately on form submit
+        disableButton();
+        
+        // Re-enable button after a delay (in case of errors)
+        setTimeout(function() {
+            enableButton();
+        }, 5000); // 5 second delay for transcript processing
+    });
+    
+    // Initialize description on page load
+    updateDescription();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - YouTube Downloader{% endblock %}
+
+{% block user_welcome %}
+<span>Welcome, {{ user.email }}</span>
+{% endblock %}
+
+{% block content %}
+<h1>Welcome to Your Dashboard</h1>
+
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Download Audio</h5>
+                    <p class="card-text">Download high-quality audio from YouTube videos.</p>
+                    <a href="{% url 'audio_dl:index' %}" class="btn btn-primary">Download Audio</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Download Video</h5>
+                    <p class="card-text">Download videos from YouTube.</p>
+                    <a href="{% url 'video_dl:video_index' %}" class="btn btn-primary">Download Video</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Download Transcripts</h5>
+                    <p class="card-text">Download and search YouTube video transcripts in multiple formats.</p>
+                    <a href="{% url 'transcriptions_dl:download_form' %}" class="btn btn-primary">Download Transcripts</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Search Transcripts</h5>
+                    <p class="card-text">Search across all your downloaded transcripts with advanced filtering.</p>
+                    <a href="{% url 'transcriptions_dl:search_transcripts' %}" class="btn btn-success">Search Transcripts</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Manage Cookies</h5>
+                    <p class="card-text">Manage your cookie preferences for a better experience.</p>
+                    <a href="{% url 'accounts:cookie_management' %}"  class="btn btn-primary">Manage Cookies</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- <div class="mt-3">
+        
+        <a href="{% url 'accounts:cookie_management' %}" class="btn btn-outline-info">
+            <i class="fas fa-cookie-bite"></i> Manage Cookies
+        </a>
+    </div> -->
+</div>
+
+<!-- <div class="text-center mt-4">
+    <form method="post" action="{% url 'accounts:logout' %}" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Logout</button>
+    </form>
+</div> -->
+{% endblock %}

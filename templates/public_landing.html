@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}YouTube Audio Downloader{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h1>YouTube Audio Downloader</h1>
+    <p class="lead">Download high-quality audio from YouTube videos</p>
+    
+    <div class="alert alert-info">
+        <strong>Sign in required</strong> to access the download functionality.
+    </div>
+    
+    <div class="mt-4">
+        <h3>Features</h3>
+        <ul class="text-left" style="max-width: 400px; margin: 0 auto;">
+            <li>Download audio from any YouTube video</li>
+            <li>High-quality audio extraction</li>
+            <li>Background processing for large files</li>
+            <li>Secure user authentication</li>
+        </ul>
+    </div>
+    
+    <div class="mt-4">
+        <a href="{% url 'accounts:login' %}" class="btn btn-primary">Sign In</a>
+        <a href="{% url 'accounts:signup' %}" class="btn btn-secondary">Create Account</a>
+    </div>
+    
+    <div class="mt-4">
+        <small class="text-muted">
+            Already have an account? <a href="{% url 'accounts:login' %}">Sign in here</a>
+        </small>
+    </div>
+</div>
+{% endblock %}

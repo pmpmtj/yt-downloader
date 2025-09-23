@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}YouTube Downloader - Home{% endblock %}
+
+{% block content %}
+<h1>Welcome to YouTube Downloader</h1>
+
+<div class="alert alert-info">
+    <strong>Welcome, {{ user.email }}!</strong> Choose what you'd like to download.
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Download Audio</h5>
+                <p class="card-text">Download high-quality audio from YouTube videos in various formats.</p>
+                <a href="{% url 'audio_dl:index' %}" class="btn btn-primary">Download Audio</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Download Video</h5>
+                <p class="card-text">Download videos from YouTube in your preferred quality and format.</p>
+                <a href="{% url 'video_dl:video_index' %}" class="btn btn-primary">Download Video</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+{% endblock %}
