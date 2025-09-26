@@ -144,9 +144,17 @@ def get_random_user_agent() -> str:
 
 
 def get_ydl_options(download_type: DownloadType, output_template: str, user_cookies: str = None) -> Dict[str, Any]:
-    """Get yt-dlp options for the specified download type with public access optimizations."""
+    """Get yt-dlp options for the specified download type with enhanced anti-detection measures."""
     # Get configuration
     config = APP_CONFIG.get("public_access", {})
+    
+    # Enhanced user agent selection with mobile preference
+    if config.get("use_mobile_fallback", True):
+        # Prefer mobile user agents for better anti-detection
+        mobile_agents = [ua for ua in APP_CONFIG["user_agents"] if "Mobile" in ua or "Android" in ua or "iPhone" in ua or "iPad" in ua]
+        selected_ua = random.choice(mobile_agents) if mobile_agents else get_random_user_agent()
+    else:
+        selected_ua = get_random_user_agent() if config.get("rotate_user_agents", True) else APP_CONFIG["user_agents"][0]
     
     base_options = {
         "format": get_format_selector(download_type),
@@ -155,21 +163,26 @@ def get_ydl_options(download_type: DownloadType, output_template: str, user_cook
         "quiet": False,  # Enable logging to see what's happening
         "nocheckcertificate": True,
         "restrictfilenames": True,
-        # Anti-bot detection measures
+        # Simplified but effective anti-detection measures
         "http_headers": {
-            "User-Agent": get_random_user_agent() if config.get("rotate_user_agents", True) else APP_CONFIG["user_agents"][0],
+            "User-Agent": selected_ua,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-us,en;q=0.5",
-            "Accept-Encoding": "gzip,deflate",
-            "Accept-Charset": "ISO-8859-1,utf-8;q=0.7,*;q=0.7",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate",
             "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
         },
-        # Additional anti-detection options
+        # Conservative anti-detection options
         "sleep_interval": 1,  # Sleep between downloads
         "max_sleep_interval": 3,  # Maximum sleep time
         "retries": 3,  # Retry failed downloads
         "fragment_retries": 3,  # Retry failed fragments
+        "socket_timeout": 30,  # Socket timeout
+        "extractor_retries": 2,  # Retry extractor failures
+        "no_check_certificate": True,  # Disable SSL certificate checking
+        "prefer_insecure": False,  # Prefer secure connections
+        "force_ipv4": True,  # Force IPv4 to avoid some blocking
+        "geo_bypass": True,  # Bypass geo-restrictions
+        "geo_bypass_country": "US",  # Use US as bypass country
     }
     
     # Enhanced anti-bot detection methods (no browser cookies needed)
